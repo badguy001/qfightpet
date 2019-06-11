@@ -105,7 +105,10 @@ class Daemon(scrapy.Spider):
                     break
             if not follow:
                 continue
-            url = href.xpath('./@href').extract()[0]
+            url = href.xpath('./@href').extract()
+            if len(url) == 0:
+                continue
+            url = url[0]
             if url.find("cmd=view") != -1:
                 continue
             yield scrapy.Request(url=url, callback=self.parse)
