@@ -6,7 +6,7 @@ import re
 
 class Daemon(scrapy.Spider):
     name = "qfightpet"
-    start_urls = "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?cmd=index&channel=0"
+    start_urls = ["http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?cmd=index&channel=0", "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&B_UID=0&sid=&channel=0&g_ut=1&cmd=missionassign&subtype=0"]
     allowed_domains = ["dld.qzapp.z.qq.com"]
     not_allow_texts = [u"商店",
                        u"购买",
@@ -18,7 +18,7 @@ class Daemon(scrapy.Spider):
                        u"升级",
                        u"兑换",
                        u"使用",
-                       u"分享",
+                       u"重置分享",
                        u"神匠坊",
                        u"兵法",
                        u"五行",
@@ -88,7 +88,10 @@ class Daemon(scrapy.Spider):
                        u"逐出师门",
                        u"踢出",
                        u"已乐斗",
-                       u"点击交易"]
+                       u"点击交易",
+                       u"回来玩吧",
+                       u"赠与",
+                       u"分解"]
 
     def parse(self, response):
         assert isinstance(response, scrapy.http.response.Response)
@@ -109,7 +112,9 @@ class Daemon(scrapy.Spider):
             if len(url) == 0:
                 continue
             url = url[0]
-            if url.find("cmd=view") != -1:
+            if url.find("cmd=view&") != -1:
+                continue
+            if url.find("cmd=missionassign&subtype=6") != -1:
                 continue
             yield scrapy.Request(url=url, callback=self.parse)
 
@@ -120,4 +125,5 @@ class Daemon(scrapy.Spider):
             cookies = re.findall(p, cookiejar)
             cookies = (cookie.split('=', 1) for cookie in cookies)
             cookies = dict(cookies)
-        yield scrapy.Request(url=self.start_urls, callback=self.parse, cookies=cookies)
+        for url in self.start_urls:
+            yield scrapy.Request(url=url, callback=self.parse, cookies=cookies)
