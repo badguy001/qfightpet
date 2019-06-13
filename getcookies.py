@@ -6,12 +6,13 @@ import time
 import re
 
 options = Options()
-# options.add_argument('--headless')
+options.add_argument('--headless')
 # options.add_argument('--user-data-dir=D:\\user_data')
-options.add_argument('--window-size=1366,768')
+# options.add_argument('--window-size=1366,768')
 
 
-# options.add_argument('--no-sandbox')
+options.add_argument('--no-sandbox')
+
 
 # 查看是否已经登录，没有登录的话在生成login.png进行扫码登录
 def login(username, password):
@@ -52,8 +53,7 @@ def browser_close():
     browser.quit()
 
 
-browser = webdriver.Chrome(executable_path='chromedriver.exe', chrome_options=options, service_log_path='web.log',
-                           service_args=['--verbose', '--log-path=web.log'])
+browser = webdriver.Chrome(executable_path='chromedriver.exe', chrome_options=options)
 
 u_file = 'users.txt'
 us = getusers(u_file)
@@ -61,6 +61,7 @@ us = getusers(u_file)
 cookiefile = 'cookies'
 for idx, u in enumerate(us):
     if login(u.get("username"), u.get("password")):
-        savecookies(cookiefile+str(idx))
+        savecookies(cookiefile + str(idx))
+        time.sleep(10)
 
 browser_close()
