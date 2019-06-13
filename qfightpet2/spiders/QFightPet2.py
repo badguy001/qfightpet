@@ -18,7 +18,7 @@ class Daemon(scrapy.Spider):
                        u"升级",
                        u"兑换",
                        u"使用",
-                       u"分享",
+                       u"重置分享",
                        u"神匠坊",
                        u"兵法",
                        u"五行",
@@ -91,7 +91,8 @@ class Daemon(scrapy.Spider):
                        u"点击交易",
                        u"回来玩吧",
                        u"赠与",
-                       u"分解"]
+                       u"分解",
+                       u"放弃"]
 
     def parse(self, response):
         assert isinstance(response, scrapy.http.response.Response)
