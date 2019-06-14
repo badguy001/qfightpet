@@ -1,5 +1,6 @@
 import os
 import re
+import time
 
 while True:
     files = os.listdir('.')
@@ -11,3 +12,4 @@ while True:
                     one.write(file_one.read())
             print file
             os.system("scrapy crawl qfightpet")
+            time.sleep(1)
