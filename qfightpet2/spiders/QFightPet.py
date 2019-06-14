@@ -92,7 +92,8 @@ class Daemon(scrapy.Spider):
                        u"回来玩吧",
                        u"赠与",
                        u"分解",
-                       u"放弃"]
+                       u"放弃",
+                       u"师徒妻拜"]
 
     def parse(self, response):
         assert isinstance(response, scrapy.http.response.Response)
