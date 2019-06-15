@@ -86,6 +86,85 @@
         "o1129426277": 10
       }, 
       "desc": "每次执行只乐斗10个人"
+    },
+    {
+      "one_count": {
+        "username": 0,
+        "o1129426277": 9
+      },
+      "par": {
+        "cmd": "totalinfo"
+      },
+      "commit_count": {
+        "username": 0,
+        "o1129426277": 1
+      },
+      "day_count": {
+        "username": 0,
+        "o1129426277": 9
+      },
+      "day_limit": {
+        "username": -1,
+        "o1129426277": -1
+      },
+      "one_limit": {
+        "username": 1,
+        "o1129426277": 10
+      },
+      "desc": "每次执行只查看一个人的资料"
+    },
+    {
+      "one_count": {
+        "username": 0,
+        "o1129426277": 9
+      },
+      "par": {
+        "cmd": "tbattle",
+        "op": "occupy"
+      },
+      "commit_count": {
+        "username": 0,
+        "o1129426277": 1
+      },
+      "day_count": {
+        "username": 0,
+        "o1129426277": 9
+      },
+      "day_limit": {
+        "username": -1,
+        "o1129426277": -1
+      },
+      "one_limit": {
+        "username": 1,
+        "o1129426277": 3
+      },
+      "desc": "每次执行问鼎天下-攻占资源点3次"
+    },
+    {
+      "one_count": {
+        "username": 0,
+        "o1129426277": 9
+      },
+      "par": {
+        "cmd": "viewfight"
+      },
+      "commit_count": {
+        "username": 0,
+        "o1129426277": 1
+      },
+      "day_count": {
+        "username": 0,
+        "o1129426277": 9
+      },
+      "day_limit": {
+        "username": -1,
+        "o1129426277": -1
+      },
+      "one_limit": {
+        "username": 1,
+        "o1129426277": 3
+      },
+      "desc": "每次执行查看乐斗过程3次"
     }
   ]
 }
