@@ -1,0 +1,91 @@
+{
+  "last_update_time": {
+    "username": "", 
+    "o1129426277": "20190615113620"
+  }, 
+  "update_time": {
+    "username": "value", 
+    "o1129426277": "20190615114348"
+  }, 
+  "parameters_limits": [
+    {
+      "one_count": {
+        "username": 0, 
+        "o1129426277": 2
+      }, 
+      "par": {
+        "cmd": "recommendmanor"
+      }, 
+      "commit_count": {
+        "username": 0, 
+        "o1129426277": 1
+      }, 
+      "day_count": {
+        "username": 0, 
+        "o1129426277": 5
+      }, 
+      "day_limit": {
+        "username": -1, 
+        "o1129426277": -1
+      }, 
+      "one_limit": {
+        "username": 1, 
+        "o1129426277": 3
+      }, 
+      "desc": "每次执行只能进入一次抢地盘"
+    }, 
+    {
+      "one_count": {
+        "username": 0, 
+        "o1129426277": 0
+      }, 
+      "par": {
+        "cmd": "manorfight", 
+        "fighttype": "1"
+      }, 
+      "commit_count": {
+        "username": 0, 
+        "o1129426277": 0
+      }, 
+      "day_count": {
+        "username": 0, 
+        "o1129426277": 1
+      }, 
+      "day_limit": {
+        "username": 1, 
+        "o1129426277": 1
+      }, 
+      "one_limit": {
+        "username": 1, 
+        "o1129426277": 1
+      }, 
+      "desc": "每天只能攻占一次地盘"
+    }, 
+    {
+      "one_count": {
+        "username": 0, 
+        "o1129426277": 9
+      }, 
+      "par": {
+        "cmd": "fight"
+      }, 
+      "commit_count": {
+        "username": 0, 
+        "o1129426277": 1
+      }, 
+      "day_count": {
+        "username": 0, 
+        "o1129426277": 9
+      }, 
+      "day_limit": {
+        "username": -1, 
+        "o1129426277": -1
+      }, 
+      "one_limit": {
+        "username": 10, 
+        "o1129426277": 10
+      }, 
+      "desc": "每次执行只乐斗10个人"
+    }
+  ]
+}

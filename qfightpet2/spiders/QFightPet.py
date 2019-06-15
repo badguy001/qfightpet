@@ -3,12 +3,23 @@
 import scrapy
 import re
 import urlparse
+import json
+import time
 
 
 class Daemon(scrapy.Spider):
     name = "qfightpet"
-    start_urls = ["http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?cmd=index&channel=0",
-                  "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&B_UID=0&sid=&channel=0&g_ut=1&cmd=missionassign&subtype=0"]
+    username = str()
+    time_limit = {}
+    limit_file = 'time_limit.json'
+    handle_httpstatus_list = [404]
+
+    start_urls = list()
+    start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?cmd=index&channel=0")
+    # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&B_UID=0&sid=&channel=0&g_ut=1&cmd=missionassign&subtype=0")
+    # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=buy&id=3108&num=1&type=1")  # 购买月卡
+    # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3108")  # 使用月卡
+
     allowed_domains = ["dld.qzapp.z.qq.com"]
     not_allow_texts = list()
     not_allow_texts.append(u"商店")
@@ -102,10 +113,17 @@ class Daemon(scrapy.Spider):
     not_allow_url_parameters.append({'cmd': 'lottery'})  # 武器弹珠
     not_allow_url_parameters.append({'cmd': 'cargo', 'op': '18'})  # 查看镖车
     not_allow_url_parameters.append({'cmd': 'view'})  # 查看
-    not_allow_url_parameters.append({'cmd': 'missionassign', 'subtype': '6'})  # 查看镖车
+    not_allow_url_parameters.append({'cmd': "missionassign", 'subtype': '6'})  # 查看镖车
+    not_allow_url_parameters.append({'cmd': 'friendlist', 'type': '1'})  # 斗友
+    not_allow_url_parameters.append({'cmd': 'fame_hall'})  # 名人堂
 
     def parse(self, response):
         assert isinstance(response, scrapy.http.response.Response)
+        self.judge_and_add_limit(response)
+        if response.url.find('cmd=fight&') != -1:
+            print u"response:" + response.url
+        if response.meta['depth'] >= self.settings.attributes['DEPTH_LIMIT'] or response.status == 404:
+            return
         hrefs = response.xpath('//a')
         for href in hrefs:
             text = href.xpath('./text()').extract()
@@ -137,6 +155,11 @@ class Daemon(scrapy.Spider):
                 if (br_text.find(u"斗豆") != -1 or br_text.find(u"斗币") != -1) and br_text.find(
                         u"领") == -1 and br_text.find(u"免费") == -1:
                     continue
+            if self.judge_over_limit(url_parameters):
+                continue
+            if url.find('cmd=fight&') != -1:
+                print u"request:" + url
+            self.judge_and_add_commit(url_parameters)
             yield scrapy.Request(url=url, callback=self.parse)
 
     def start_requests(self):
@@ -146,8 +169,16 @@ class Daemon(scrapy.Spider):
             cookies = re.findall(p, cookiejar)
             cookies = (cookie.split('=', 1) for cookie in cookies)
             cookies = dict(cookies)
+        if "uin" in cookies:
+            self.username = cookies["uin"]
+        self.init_time_limit()
         for url in self.start_urls:
             yield scrapy.Request(url=url, callback=self.parse, cookies=cookies)
+
+    def closed(self, reason):
+        if len(self.time_limit) != 0:
+            with open(self.limit_file, mode='w') as f:
+                f.write(json.dumps(self.time_limit, indent=2, ensure_ascii=False).encode('utf-8'))
 
     def get_same_br_text(self, href):
         precedings = href.xpath('./preceding-sibling::*')
@@ -168,3 +199,72 @@ class Daemon(scrapy.Spider):
                 for text in following.xpath('./descendant-or-self::*/text()').extract():
                     result = result + '\n' + text
         return result
+
+    # 访问返回结果后对访问次数进行增加
+    def judge_and_add_limit(self, response):
+        is_success = True
+        if response.status == 404 or \
+                any(text.find(u"很抱歉，系统繁忙，请稍后再试!") != -1 for text in response.xpath('//text()').extract()):
+            is_success = False
+        url_parameters = urlparse.parse_qs(urlparse.urlparse(response.url).query)
+        for idx, one_par_limit in enumerate(self.time_limit["parameters_limits"]):
+            if len(one_par_limit["par"]) > 0 and all((k in url_parameters and v in url_parameters[k]) for k, v in
+                                                            one_par_limit["par"].iteritems()):
+                if is_success:
+                    self.time_limit["parameters_limits"][idx]["one_count"][self.username] = \
+                        self.time_limit["parameters_limits"][idx]["one_count"][self.username] + 1
+                    self.time_limit["parameters_limits"][idx]["day_count"][self.username] = \
+                        self.time_limit["parameters_limits"][idx]["day_count"][self.username] + 1
+                # 减少已经提交request但未返回的数量
+                self.time_limit["parameters_limits"][idx]["commit_count"][self.username] = \
+                    self.time_limit["parameters_limits"][idx]["commit_count"][self.username] - 1
+
+    def judge_and_add_commit(self, url_parameters):
+        for idx, one_par_limit in enumerate(self.time_limit["parameters_limits"]):
+            if len(one_par_limit["par"]) > 0 and \
+                    all((k in url_parameters and v in url_parameters[k]) for k, v in one_par_limit["par"].iteritems()):
+                self.time_limit["parameters_limits"][idx]["commit_count"][self.username] = \
+                    self.time_limit["parameters_limits"][idx]["commit_count"][self.username] + 1
+
+    # 判断url是否超过了最大访问次数，考虑已经提交request但未返回的数据量
+    def judge_over_limit(self, url_parameters):
+        for one_par_limit in self.time_limit["parameters_limits"]:
+            if len(one_par_limit["par"]) > 0 and \
+                    all((k in url_parameters and v in url_parameters[k]) for k, v in one_par_limit["par"].iteritems()):
+                if one_par_limit["day_limit"][self.username] != -1 and one_par_limit["day_count"][self.username] + \
+                        one_par_limit["commit_count"][self.username] >= one_par_limit["day_limit"][self.username]:
+                    return True
+                if one_par_limit["one_limit"][self.username] != -1 and one_par_limit["one_count"][self.username] + \
+                        one_par_limit["commit_count"][self.username] >= one_par_limit["one_limit"][self.username]:
+                    return True
+        return False
+
+    def init_time_limit(self):
+        default_username = "username"
+        if self.username is None or self.username == "":
+            return
+        with open(self.limit_file, mode='r') as f:
+            self.time_limit = json.loads(f.read())
+        if self.username in self.time_limit["update_time"]:
+            self.time_limit["last_update_time"][self.username] = self.time_limit["update_time"][self.username]
+        else:
+            self.time_limit["last_update_time"][self.username] = self.get_now_time()
+        self.time_limit["update_time"][self.username] = self.get_now_time()
+        is_diff_day = False
+        if self.time_limit["update_time"][self.username][0:8] != \
+                self.time_limit["last_update_time"][self.username][0:8]:
+            is_diff_day = True
+        for idx, one_par_limit in enumerate(self.time_limit["parameters_limits"]):
+            if self.username not in one_par_limit["day_limit"]:
+                self.time_limit["parameters_limits"][idx]["day_limit"][self.username] = \
+                    self.time_limit["parameters_limits"][idx]["day_limit"][default_username]
+            if self.username not in one_par_limit["one_limit"]:
+                self.time_limit["parameters_limits"][idx]["one_limit"][self.username] = \
+                    self.time_limit["parameters_limits"][idx]["one_limit"][default_username]
+            self.time_limit["parameters_limits"][idx]["one_count"][self.username] = 0
+            if is_diff_day or self.username not in one_par_limit["day_count"]:
+                self.time_limit["parameters_limits"][idx]["day_count"][self.username] = 0
+            self.time_limit["parameters_limits"][idx]["commit_count"][self.username] = 0
+
+    def get_now_time(self):
+        return time.strftime("%Y%m%d%H%M%S", time.localtime())
