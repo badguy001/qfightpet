@@ -139,6 +139,11 @@ class Daemon(scrapy.Spider):
     not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '18'})  # 历练只去最后一级
     not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '19'})  # 历练只去最后一级
     not_allow_url_parameters.append({'cmd': 'factionhr', 'subtype': '5'})  # 不要变更帮派成员的职位
+    not_allow_url_parameters.append({'cmd': 'sundry'})  # 禁用助手里面的设置
+    not_allow_url_parameters.append({'cmd': 'forage_war', 'subtype': '3'})  # 掠夺战况
+    not_allow_url_parameters.append({'cmd': 'forage_war', 'subtype': '2', 'op': '1'})  # 掠夺粮仓情况
+    not_allow_url_parameters.append({'cmd': 'brofight', 'subtype': '13', 'detail': '1'})  # 不要查看结拜赛的队伍信息
+    not_allow_url_parameters.append({'cmd': 'brofight', 'subtype': '12', 'detail': '1'})  # 不要查看兵法技能详情
 
     def parse(self, response):
         assert isinstance(response, scrapy.http.response.Response)
