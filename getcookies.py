@@ -17,6 +17,7 @@ options.add_argument('--no-sandbox')
 # 查看是否已经登录，没有登录的话在生成login.png进行扫码登录
 def login(username, password):
     png_name = 'login.png'
+    browser.delete_all_cookies()
     browser.get(
         'https://ui.ptlogin2.qq.com/cgi-bin/login?appid=614038002&style=9&s_url=http%3A%2F%2Fdld.qzapp.z.qq.com%2Fqpet%2Fcgi-bin%2Fphonepk%3Fcmd%3Dindex%26channel%3D0')
     browser.find_element_by_xpath('//input[@id="u" and @name="u"]').clear()
