@@ -23,7 +23,7 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML
 ROBOTSTXT_OBEY = True
 FEED_EXPORT_ENCODING = 'utf-8'
 LOG_LEVEL = 'INFO'
-DEPTH_LIMIT = 2
+DEPTH_LIMIT = 5
 LOG_FILE = 'run.log'
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
