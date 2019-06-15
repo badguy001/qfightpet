@@ -390,6 +390,33 @@
         "o0409966172": 5
       }, 
       "desc": "每次结拜赛助威五次"
+    },
+    {
+      "one_count": {
+        "username": 0,
+        "o1129426277": 1
+      },
+      "par": {
+        "cmd": "cargo",
+		"op": "14"
+      },
+      "day_count": {
+        "username": 0,
+        "o1129426277": 11
+      },
+      "commit_count": {
+        "username": 0,
+        "o1129426277": 0
+      },
+      "day_limit": {
+        "username": -1,
+        "o1129426277": -1
+      },
+      "one_limit": {
+        "username": 10,
+        "o1129426277": 10
+      },
+      "desc": "每次镖行天下拦截10次"
     }
   ]
 }

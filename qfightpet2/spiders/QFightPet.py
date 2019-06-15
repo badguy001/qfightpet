@@ -284,8 +284,7 @@ class Daemon(scrapy.Spider):
             self.time_limit["last_update_time"][self.username] = self.get_now_time()
         self.time_limit["update_time"][self.username] = self.get_now_time()
         is_diff_day = False
-        if self.time_limit["update_time"][self.username][0:8] != \
-                self.time_limit["last_update_time"][self.username][0:8]:
+        if self.time_limit["update_time"][self.username][8:10] >= '07' and self.time_limit["last_update_time"][self.username][8:10] < '07':
             is_diff_day = True
         for idx, one_par_limit in enumerate(self.time_limit["parameters_limits"]):
             if self.username not in one_par_limit["day_limit"]:
