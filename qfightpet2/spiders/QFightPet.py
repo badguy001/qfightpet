@@ -16,8 +16,8 @@ class Daemon(scrapy.Spider):
     stat = dict({'null': 0})
 
     start_urls = list()
-    start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?cmd=index&channel=0")
-    # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&B_UID=0&sid=&channel=0&g_ut=1&cmd=missionassign&subtype=0")
+    #start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?cmd=index&channel=0")
+    start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&B_UID=0&sid=&channel=0&g_ut=1&cmd=misty")
     # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=buy&id=3108&num=1&type=1")  # 购买月卡
     # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3108")  # 使用月卡
 
@@ -169,6 +169,8 @@ class Daemon(scrapy.Spider):
                 if text.find(t) != -1:
                     follow = False
                     break
+            if text == u"返回飘渺幻境" and u"乐斗" not in response.xpath('//a/text()').extract():
+                follow = True
             if not follow:
                 continue
             url = href.xpath('./@href').extract()
@@ -214,19 +216,25 @@ class Daemon(scrapy.Spider):
                 f.write(json.dumps(self.time_limit, indent=2, ensure_ascii=False).encode('utf-8'))
 
     def get_same_br_text(self, href):
-        precedings = href.xpath('./preceding-sibling::*')
-        followings = href.xpath('./following-sibling::*')
+        precedings = href.xpath('./preceding-sibling::* | ./preceding-sibling::text()')
+        followings = href.xpath('./following-sibling::* | ./following-sibling::text()')
         result = href.xpath('./text()').extract()
         if len(result) > 0:
             result = result[0]
         for preceding in reversed(precedings):
-            if 'br' in preceding.xpath('name(.)').extract():
+            label_name = preceding.xpath('name(.)').extract()
+            if len(label_name) == 0:
+                result = preceding.extract() + '\n' + result
+            elif 'br' in preceding.xpath('name(.)').extract():
                 break
             else:
                 for text in reversed(preceding.xpath('./descendant-or-self::*/text()').extract()):
                     result = text + '\n' + result
         for following in followings:
-            if 'br' in following.xpath('name(.)').extract():
+            label_name = following.xpath('name(.)')
+            if len(label_name) == 0:
+                result = result + '\n' + following.extract()
+            elif 'br' in following.xpath('name(.)').extract():
                 break
             else:
                 for text in following.xpath('./descendant-or-self::*/text()').extract():

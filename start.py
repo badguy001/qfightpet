@@ -14,6 +14,6 @@ while True:
                 with open("cookies.txt", 'w') as one:
                     one.write(file_one.read())
             print file
-            os.system("scrapy crawl qfightpet")
-            # cmdline.execute('scrapy crawl qfightpet'.split())   # 调试
+            # os.system("scrapy crawl qfightpet")
+            cmdline.execute('scrapy crawl qfightpet'.split())   # 调试
             time.sleep(1)
