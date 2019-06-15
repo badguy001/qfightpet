@@ -1,28 +1,28 @@
 {
   "last_update_time": {
     "username": "", 
-    "o1129426277": "20190615113620"
+    "o1129426277": "20190615125350"
   }, 
   "update_time": {
     "username": "value", 
-    "o1129426277": "20190615114348"
+    "o1129426277": "20190615125627"
   }, 
   "parameters_limits": [
     {
       "one_count": {
         "username": 0, 
-        "o1129426277": 2
+        "o1129426277": 3
       }, 
       "par": {
         "cmd": "recommendmanor"
       }, 
-      "commit_count": {
-        "username": 0, 
-        "o1129426277": 1
-      }, 
       "day_count": {
         "username": 0, 
-        "o1129426277": 5
+        "o1129426277": 11
+      }, 
+      "commit_count": {
+        "username": 0, 
+        "o1129426277": 0
       }, 
       "day_limit": {
         "username": -1, 
@@ -43,13 +43,13 @@
         "cmd": "manorfight", 
         "fighttype": "1"
       }, 
-      "commit_count": {
-        "username": 0, 
-        "o1129426277": 0
-      }, 
       "day_count": {
         "username": 0, 
         "o1129426277": 1
+      }, 
+      "commit_count": {
+        "username": 0, 
+        "o1129426277": 0
       }, 
       "day_limit": {
         "username": 1, 
@@ -64,18 +64,18 @@
     {
       "one_count": {
         "username": 0, 
-        "o1129426277": 9
+        "o1129426277": 10
       }, 
       "par": {
         "cmd": "fight"
       }, 
-      "commit_count": {
-        "username": 0, 
-        "o1129426277": 1
-      }, 
       "day_count": {
         "username": 0, 
-        "o1129426277": 9
+        "o1129426277": 28
+      }, 
+      "commit_count": {
+        "username": 0, 
+        "o1129426277": 0
       }, 
       "day_limit": {
         "username": -1, 
@@ -86,102 +86,129 @@
         "o1129426277": 10
       }, 
       "desc": "每次执行只乐斗10个人"
-    },
+    }, 
     {
       "one_count": {
-        "username": 0,
-        "o1129426277": 9
-      },
+        "username": 0, 
+        "o1129426277": 1
+      }, 
       "par": {
         "cmd": "totalinfo"
-      },
-      "commit_count": {
-        "username": 0,
-        "o1129426277": 1
-      },
+      }, 
       "day_count": {
-        "username": 0,
-        "o1129426277": 9
-      },
+        "username": 0, 
+        "o1129426277": 11
+      }, 
+      "commit_count": {
+        "username": 0, 
+        "o1129426277": 0
+      }, 
       "day_limit": {
-        "username": -1,
+        "username": -1, 
         "o1129426277": -1
-      },
+      }, 
       "one_limit": {
-        "username": 1,
+        "username": 1, 
         "o1129426277": 1
-      },
+      }, 
       "desc": "每次执行只查看一个人的资料"
+    }, 
+    {
+      "one_count": {
+        "username": 0, 
+        "o1129426277": 3
+      }, 
+      "par": {
+        "cmd": "tbattle", 
+        "op": "occupy"
+      }, 
+      "day_count": {
+        "username": 0, 
+        "o1129426277": 15
+      }, 
+      "commit_count": {
+        "username": 0, 
+        "o1129426277": 0
+      }, 
+      "day_limit": {
+        "username": -1, 
+        "o1129426277": -1
+      }, 
+      "one_limit": {
+        "username": 3, 
+        "o1129426277": 3
+      }, 
+      "desc": "每次执行问鼎天下-攻占资源点3次"
+    }, 
+    {
+      "one_count": {
+        "username": 0, 
+        "o1129426277": 3
+      }, 
+      "par": {
+        "cmd": "viewfight"
+      }, 
+      "day_count": {
+        "username": 0, 
+        "o1129426277": 15
+      }, 
+      "commit_count": {
+        "username": 0, 
+        "o1129426277": 0
+      }, 
+      "day_limit": {
+        "username": -1, 
+        "o1129426277": -1
+      }, 
+      "one_limit": {
+        "username": 3, 
+        "o1129426277": 3
+      }, 
+      "desc": "每次执行查看乐斗过程3次"
+    }, 
+    {
+      "one_count": {
+        "username": 0, 
+        "o1129426277": 1
+      }, 
+      "par": {
+        "cmd": "towerfight", 
+        "type": "1"
+      }, 
+      "day_count": {
+        "username": 0, 
+        "o1129426277": 11
+      }, 
+      "commit_count": {
+        "username": 0, 
+        "o1129426277": 0
+      }, 
+      "day_limit": {
+        "username": -1, 
+        "o1129426277": -1
+      }, 
+      "one_limit": {
+        "username": 1, 
+        "o1129426277": 1
+      }, 
+      "desc": "每天次自动挑战斗神塔一次"
     },
     {
       "one_count": {
         "username": 0,
-        "o1129426277": 9
+        "o1129426277": 1
       },
       "par": {
         "cmd": "tbattle",
-        "op": "occupy"
-      },
-      "commit_count": {
-        "username": 0,
-        "o1129426277": 1
+        "op": "showregionbattle"
       },
       "day_count": {
         "username": 0,
-        "o1129426277": 9
-      },
-      "day_limit": {
-        "username": -1,
-        "o1129426277": -1
-      },
-      "one_limit": {
-        "username": 3,
-        "o1129426277": 3
-      },
-      "desc": "每次执行问鼎天下-攻占资源点3次"
-    },
-    {
-      "one_count": {
-        "username": 0,
-        "o1129426277": 9
-      },
-      "par": {
-        "cmd": "viewfight"
+        "o1129426277": 11
       },
       "commit_count": {
         "username": 0,
-        "o1129426277": 1
-      },
-      "day_count": {
-        "username": 0,
-        "o1129426277": 9
-      },
-      "day_limit": {
-        "username": -1,
-        "o1129426277": -1
-      },
-      "one_limit": {
-        "username": 3,
-        "o1129426277": 3
-      },
-      "desc": "每次执行查看乐斗过程3次"
-    },
-    {
-      "one_count": {
-        "username": 0,
-        "o1129426277": 9
-      },
-      "par": {
-        "cmd": "towerfight",
-        "type": "1"
-      },
-      "commit_count": {
-        "username": 0,
-        "o1129426277": 1
-      },
-      "day_count": {
-        "username": 0,
-        "o1129426277": 9
+        "o1129426277": 0
       },
       "day_limit": {
         "username": -1,
@@ -191,7 +218,61 @@
         "username": 1,
         "o1129426277": 1
       },
-      "desc": "每天次自动挑战斗神塔一次"
+      "desc": "每次问鼎天下区域战只能切换一次区域"
+    },
+    {
+      "one_count": {
+        "username": 0,
+        "o1129426277": 1
+      },
+      "par": {
+        "cmd": "tbattle",
+        "op": "cheerregionbattle"
+      },
+      "day_count": {
+        "username": 0,
+        "o1129426277": 11
+      },
+      "commit_count": {
+        "username": 0,
+        "o1129426277": 0
+      },
+      "day_limit": {
+        "username": -1,
+        "o1129426277": -1
+      },
+      "one_limit": {
+        "username": 5,
+        "o1129426277": 5
+      },
+      "desc": "每次问鼎天下区域战助威5次"
+    },
+    {
+      "one_count": {
+        "username": 0,
+        "o1129426277": 1
+      },
+      "par": {
+        "cmd": "factionhr",
+        "subtype": "14"
+      },
+      "day_count": {
+        "username": 0,
+        "o1129426277": 11
+      },
+      "commit_count": {
+        "username": 0,
+        "o1129426277": 0
+      },
+      "day_limit": {
+        "username": -1,
+        "o1129426277": -1
+      },
+      "one_limit": {
+        "username": 1,
+        "o1129426277": 1
+      },
+      "desc": "每次查看一次帮贡"
     }
   ]
 }

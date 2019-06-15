@@ -13,6 +13,7 @@ class Daemon(scrapy.Spider):
     time_limit = {}
     limit_file = 'time_limit.json'
     handle_httpstatus_list = [404]
+    stat = dict({'null': 0})
 
     start_urls = list()
     start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?cmd=index&channel=0")
@@ -117,9 +118,38 @@ class Daemon(scrapy.Spider):
     not_allow_url_parameters.append({'cmd': "missionassign", 'subtype': '6'})  # 查看镖车
     not_allow_url_parameters.append({'cmd': 'friendlist', 'type': '1'})  # 斗友
     not_allow_url_parameters.append({'cmd': 'fame_hall'})  # 名人堂
+    not_allow_url_parameters.append({'cmd': 'viewgoods'})  # 查看各种物品
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '1'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '2'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '3'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '4'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '5'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '6'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '7'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '8'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '9'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '10'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '11'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '12'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '13'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '14'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '15'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '16'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '17'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '18'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '19'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'factionhr', 'subtype': '5'})  # 不要变更帮派成员的职位
 
     def parse(self, response):
         assert isinstance(response, scrapy.http.response.Response)
+        tmp = urlparse.parse_qs(urlparse.urlparse(response.url).query)
+        if "cmd" in tmp and len(tmp["cmd"]) > 0:
+            if tmp["cmd"][0] in self.stat:
+                self.stat[tmp["cmd"][0]] = self.stat[tmp["cmd"][0]] + 1
+            else:
+                self.stat[tmp["cmd"][0]] = 1
+        else:
+            self.stat["null"] = self.stat["null"] + 1
         self.judge_and_add_limit(response)
         if response.meta['depth'] >= self.settings.attributes['DEPTH_LIMIT'] or response.status == 404:
             return
@@ -173,6 +203,7 @@ class Daemon(scrapy.Spider):
             yield scrapy.Request(url=url, callback=self.parse, cookies=cookies)
 
     def closed(self, reason):
+        print self.stat
         if len(self.time_limit) != 0:
             with open(self.limit_file, mode='w') as f:
                 f.write(json.dumps(self.time_limit, indent=2, ensure_ascii=False).encode('utf-8'))
