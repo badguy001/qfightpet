@@ -121,8 +121,6 @@ class Daemon(scrapy.Spider):
     def parse(self, response):
         assert isinstance(response, scrapy.http.response.Response)
         self.judge_and_add_limit(response)
-        if response.url.find('cmd=fight&') != -1:
-            print u"response:" + response.url
         if response.meta['depth'] >= self.settings.attributes['DEPTH_LIMIT'] or response.status == 404:
             return
         hrefs = response.xpath('//a')
@@ -158,8 +156,6 @@ class Daemon(scrapy.Spider):
                     continue
             if self.judge_over_limit(url_parameters):
                 continue
-            if url.find('cmd=fight&') != -1:
-                print u"request:" + url
             self.judge_and_add_commit(url_parameters)
             yield scrapy.Request(url=url, callback=self.parse)
 
