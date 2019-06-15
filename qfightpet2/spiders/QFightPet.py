@@ -53,10 +53,10 @@ class Daemon(scrapy.Spider):
     not_allow_texts.append(u"神将录")
     not_allow_texts.append(u"斗技")
     not_allow_texts.append(u"合成")
-    not_allow_texts.append(u"vip")
+    # not_allow_texts.append(u"vip")
     not_allow_texts.append(u"变强")
     not_allow_texts.append(u"恢复")
-    not_allow_texts.append(u"达人")
+    # not_allow_texts.append(u"达人")
     not_allow_texts.append(u"觉醒")
     not_allow_texts.append(u"充值")
     not_allow_texts.append(u"入魂")
@@ -108,6 +108,7 @@ class Daemon(scrapy.Spider):
     not_allow_texts.append(u"放弃")
     not_allow_texts.append(u"师徒妻拜")
     not_allow_texts.append(u"背包")
+    not_allow_texts.append(u"进阶")
 
     not_allow_url_parameters = list()
     not_allow_url_parameters.append({'cmd': 'lottery'})  # 武器弹珠
