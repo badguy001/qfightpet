@@ -98,9 +98,9 @@
         "o0409966172": -1
       }, 
       "one_limit": {
-        "username": 10, 
-        "o1129426277": 10, 
-        "o0409966172": 10
+        "username": 100,
+        "o1129426277": 100,
+        "o0409966172": 100
       }, 
       "desc": "每次执行只乐斗10个人"
     }, 
@@ -422,6 +422,86 @@
         "o0409966172": 10
       }, 
       "desc": "每次镖行天下拦截10次"
+    },
+    {
+      "one_count": {
+        "username": 0,
+        "o1129426277": 0
+      },
+      "par": {
+        "cmd": "oblation"
+      },
+      "day_count": {
+        "username": 0,
+        "o1129426277": 0
+      },
+      "commit_count": {
+        "username": 0,
+        "o1129426277": 0
+      },
+      "day_limit": {
+        "username": 1,
+        "o1129426277": 1
+      },
+      "one_limit": {
+        "username": 1,
+        "o1129426277": 1
+      },
+      "desc": "每天供奉一次"
+    },
+    {
+      "one_count": {
+        "username": 0,
+        "o1129426277": 1
+      },
+      "par": {
+        "cmd": "element",
+		"subtype": "7"
+      },
+      "day_count": {
+        "username": 0,
+        "o1129426277": 0
+      },
+      "commit_count": {
+        "username": 0,
+        "o1129426277": 0
+      },
+      "day_limit": {
+        "username": 1,
+        "o1129426277": 1
+      },
+      "one_limit": {
+        "username": 1,
+        "o1129426277": 1
+      },
+      "desc": "每天夺宝投掷一次"
+    },
+    {
+      "one_count": {
+        "username": 0,
+        "o1129426277": 1
+      },
+      "par": {
+        "cmd": "brofight",
+		"subtype": "7"
+      },
+      "day_count": {
+        "username": 0,
+        "o1129426277": 0
+      },
+      "commit_count": {
+        "username": 0,
+        "o1129426277": 0
+      },
+      "day_limit": {
+        "username": -1,
+        "o1129426277": -1
+      },
+      "one_limit": {
+        "username": 1,
+        "o1129426277": 1
+      },
+      "desc": "每次查看一次结拜赛战况"
     }
   ]
 }

@@ -5,7 +5,7 @@ import re
 import urlparse
 import json
 import time
-
+import random
 
 class Daemon(scrapy.Spider):
     name = "qfightpet"
@@ -16,10 +16,12 @@ class Daemon(scrapy.Spider):
     stat = dict({'null': 0})
 
     start_urls = list()
-    #start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?cmd=index&channel=0")
-    start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&B_UID=0&sid=&channel=0&g_ut=1&cmd=misty")
+    start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?cmd=index&channel=0")
+    start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=oblation&id=3089") # 供奉还魂丹
+    start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=oblation&id=3181") # 供奉传功符
+    # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&B_UID=0&sid=&channel=0&g_ut=1&cmd=misty")
     # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=buy&id=3108&num=1&type=1")  # 购买月卡
-    # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3108")  # 使用月卡
+    start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3108")  # 使用月卡
 
     allowed_domains = ["dld.qzapp.z.qq.com"]
     not_allow_texts = list()
@@ -35,7 +37,7 @@ class Daemon(scrapy.Spider):
     not_allow_texts.append(u"使用")
     not_allow_texts.append(u"重置分享")
     not_allow_texts.append(u"神匠坊")
-    not_allow_texts.append(u"兵法")
+    # not_allow_texts.append(u"兵法")
     not_allow_texts.append(u"五行")
     not_allow_texts.append(u"助阵")
     not_allow_texts.append(u"佣兵")
@@ -143,7 +145,14 @@ class Daemon(scrapy.Spider):
     not_allow_url_parameters.append({'cmd': 'forage_war', 'subtype': '3'})  # 掠夺战况
     not_allow_url_parameters.append({'cmd': 'forage_war', 'subtype': '2', 'op': '1'})  # 掠夺粮仓情况
     not_allow_url_parameters.append({'cmd': 'brofight', 'subtype': '13', 'detail': '1'})  # 不要查看结拜赛的队伍信息
+    not_allow_url_parameters.append({'cmd': 'brofight', 'subtype': '6'})  # 不要查看结更多战况信息
     not_allow_url_parameters.append({'cmd': 'brofight', 'subtype': '12', 'detail': '1'})  # 不要查看兵法技能详情
+    not_allow_url_parameters.append({'cmd': 'factionarmy', 'op': 'viewRevive'})  # 帮派远征不能重生（消耗斗豆）
+    not_allow_url_parameters.append({'cmd': 'luandou', 'op': '1'})  # 乱斗刷新
+    not_allow_url_parameters.append({'cmd': 'element', 'subtype': '8'})  # 遥控骰子
+    not_allow_url_parameters.append({'cmd': 'zodiacdungeon', 'op': 'backtolife'})  # 十二宫花斗豆复活
+    not_allow_url_parameters.append({'cmd': 'showwulintop'})  # 查看武林战况
+    not_allow_url_parameters.append({'cmd': 'wulinrank'})  # 查看武林战况
 
     def parse(self, response):
         assert isinstance(response, scrapy.http.response.Response)
@@ -194,7 +203,18 @@ class Daemon(scrapy.Spider):
             if self.judge_over_limit(url_parameters):
                 continue
             self.judge_and_add_commit(url_parameters)
-            yield scrapy.Request(url=url, callback=self.parse)
+            priority = 0
+            if u"侠侣" == text:
+                priority = 75
+            elif u"好友" == text:
+                priority = 25
+            # 乐斗顺序
+            if 'cmd' in url_parameters and 'fight' in url_parameters['cmd']:
+                if 'type' in url_parameters and '10' in url_parameters['type']:
+                    priority = 25  # 侠侣乐斗
+                if 'B_UID' in url_parameters and len(url_parameters['B_UID']) > 0 and len(url_parameters['B_UID'][0]) <= 5:
+                    priority = 75  # 乐斗boss
+            yield scrapy.Request(url=url, callback=self.parse, priority=priority)
 
     def start_requests(self):
         with open('cookies.txt', 'r') as f:
@@ -206,7 +226,12 @@ class Daemon(scrapy.Spider):
         if "uin" in cookies:
             self.username = cookies["uin"]
         self.init_time_limit()
+        random.shuffle(self.start_urls)
         for url in self.start_urls:
+            url_parameters = urlparse.parse_qs(urlparse.urlparse(url).query)
+            if self.judge_over_limit(url_parameters):
+                continue
+            self.judge_and_add_commit(url_parameters)
             yield scrapy.Request(url=url, callback=self.parse, cookies=cookies)
 
     def closed(self, reason):
