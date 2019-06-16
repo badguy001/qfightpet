@@ -22,9 +22,11 @@ def login(username, password):
         'https://ui.ptlogin2.qq.com/cgi-bin/login?appid=614038002&style=9&s_url=http%3A%2F%2Fdld.qzapp.z.qq.com%2Fqpet%2Fcgi-bin%2Fphonepk%3Fcmd%3Dindex%26channel%3D0')
     browser.find_element_by_xpath('//input[@id="u" and @name="u"]').clear()
     browser.find_element_by_xpath('//input[@id="u" and @name="u"]').send_keys(username)
-    browser.find_element_by_xpath('//input[@id="p" and @name="p"]').send_keys(password)
-    browser.find_element_by_xpath('//div[@id="go"]').click()
     time.sleep(1)
+    browser.find_element_by_xpath('//input[@id="p" and @name="p"]').send_keys(password)
+    time.sleep(1)
+    browser.find_element_by_xpath('//div[@id="go"]').click()
+    time.sleep(10)
     if browser.current_url == 'http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?cmd=index&channel=0':
         return 1
     else:
