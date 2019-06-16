@@ -4,6 +4,7 @@ from selenium.webdriver.chrome.options import Options
 import os
 import time
 import re
+import platform
 
 options = Options()
 options.add_argument('--headless')
@@ -12,7 +13,6 @@ options.add_argument('--headless')
 
 
 options.add_argument('--no-sandbox')
-
 
 # 查看是否已经登录，没有登录的话在生成login.png进行扫码登录
 def login(username, password):
@@ -54,16 +54,21 @@ def browser_close():
     browser.close()
     browser.quit()
 
+def open_browser():
+    global browser
+    if platform.system() == 'Linux':
+        exec_path = 'chromedriver'
+    else:
+        exec_path = 'chromedriver.exe'
+    browser = webdriver.Chrome(executable_path=exec_path, chrome_options=options)
 
-browser = webdriver.Chrome(executable_path='chromedriver.exe', chrome_options=options)
 
+open_browser()
 u_file = 'users.txt'
 us = getusers(u_file)
-
 cookiefile = 'cookies'
 for idx, u in enumerate(us):
     if login(u.get("username"), u.get("password")):
         savecookies(cookiefile + str(idx))
         time.sleep(10)
-
 browser_close()
