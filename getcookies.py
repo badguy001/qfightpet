@@ -7,9 +7,9 @@ import re
 import platform
 
 options = Options()
-options.add_argument('--headless')
+#options.add_argument('--headless')
 # options.add_argument('--user-data-dir=D:\\user_data')
-# options.add_argument('--window-size=1366,768')
+options.add_argument('--window-size=1366,768')
 
 
 options.add_argument('--no-sandbox')

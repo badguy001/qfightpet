@@ -14,6 +14,7 @@ class Daemon(scrapy.Spider):
     limit_file = 'time_limit.json'
     handle_httpstatus_list = [404]
     stat = dict({'null': 0})
+    my_level = 0  # 等级
 
     start_urls = list()
     start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?cmd=index&channel=0")
@@ -63,7 +64,7 @@ class Daemon(scrapy.Spider):
     not_allow_texts.append(u"觉醒")
     not_allow_texts.append(u"充值")
     not_allow_texts.append(u"入魂")
-    not_allow_texts.append(u"复活")
+    # not_allow_texts.append(u"复活")
     not_allow_texts.append(u"助手")
     not_allow_texts.append(u"镶嵌")
     not_allow_texts.append(u"分解")
@@ -153,10 +154,12 @@ class Daemon(scrapy.Spider):
     not_allow_url_parameters.append({'cmd': 'zodiacdungeon', 'op': 'backtolife'})  # 十二宫花斗豆复活
     not_allow_url_parameters.append({'cmd': 'showwulintop'})  # 查看武林战况
     not_allow_url_parameters.append({'cmd': 'wulinrank'})  # 查看武林战况
+    not_allow_url_parameters.append({'cmd': 'sect_task', 'subtype': '1'})  # 门派任务花斗豆刷新委托人
 
     def parse(self, response):
         assert isinstance(response, scrapy.http.response.Response)
         tmp = urlparse.parse_qs(urlparse.urlparse(response.url).query)
+        # 统计每种cmd访问的次数
         if "cmd" in tmp and len(tmp["cmd"]) > 0:
             if tmp["cmd"][0] in self.stat:
                 self.stat[tmp["cmd"][0]] = self.stat[tmp["cmd"][0]] + 1
@@ -164,6 +167,16 @@ class Daemon(scrapy.Spider):
                 self.stat[tmp["cmd"][0]] = 1
         else:
             self.stat["null"] = self.stat["null"] + 1
+        # 获取任务等级
+        if 'index' in tmp.get('cmd', default=['none']):
+            for ttt in response.xpath('//text()').extract():
+                p = re.compile(u"等级:([0-9]+)")
+                for l in p.findall(ttt):
+                    self.my_level = int(l)
+                    break
+                if self.my_level != 0:
+                    break
+        # 增加访问次数
         self.judge_and_add_limit(response)
         if response.meta['depth'] >= self.settings.attributes['DEPTH_LIMIT'] or response.status == 404:
             return
@@ -178,6 +191,7 @@ class Daemon(scrapy.Spider):
                 if text.find(t) != -1:
                     follow = False
                     break
+            # 幻境场景内全部乐斗完了则可以返回场景选择
             if text == u"返回飘渺幻境" and u"乐斗" not in response.xpath('//a/text()').extract():
                 follow = True
             if not follow:
@@ -198,22 +212,47 @@ class Daemon(scrapy.Spider):
             br_text = self.get_same_br_text(href)
             if response.url.find('cmd=index&') == -1:
                 if (br_text.find(u"斗豆") != -1 or br_text.find(u"斗币") != -1) and br_text.find(
-                        u"领") == -1 and br_text.find(u"免费") == -1:
+                        u"领") == -1 and br_text.find(u"免费") == -1 and text != u"取消":
                     continue
             if self.judge_over_limit(url_parameters):
                 continue
-            self.judge_and_add_commit(url_parameters)
+            #  乐斗boss不计数
+            if 'fight' in url_parameters.get('cmd', default=['none']) and \
+                    'B_UID' in url_parameters and len(url_parameters['B_UID']) > 0 and \
+                    len(url_parameters.get['B_UID'][0]) <= 5:
+                None
+            else:
+                self.judge_and_add_commit(url_parameters)
             priority = 0
             if u"侠侣" == text:
                 priority = 75
             elif u"好友" == text:
                 priority = 25
             # 乐斗顺序
-            if 'cmd' in url_parameters and 'fight' in url_parameters['cmd']:
-                if 'type' in url_parameters and '10' in url_parameters['type']:
+            if 'fight' in url_parameters.get('cmd', default=['none']):
+                if '10' in url_parameters.get('type', default=['none']):
                     priority = 25  # 侠侣乐斗
-                if 'B_UID' in url_parameters and len(url_parameters['B_UID']) > 0 and len(url_parameters['B_UID'][0]) <= 5:
+                if 'B_UID' in url_parameters and len(url_parameters['B_UID']) > 0 and \
+                        len(url_parameters['B_UID'][0]) <= 5:
                     priority = 75  # 乐斗boss
+            # 十二宫
+            if 'zodiacdungeon' in url_parameters.get('cmd', default=['none']):
+                # 十二宫优先进入等级比自己高10级的场景
+                if 'showautofightpage' in url_parameters.get('op', default=['none']) or \
+                        'showfightpage' in url_parameters.get('op', default=['none']):
+                    if br_text.find(str(self.my_level + 10 - (self.my_level + 10) % 5) + '-' +
+                                    str(self.my_level + 15 - (self.my_level + 15) % 5)) != -1:
+                        priority = 75
+                # 优先选择复活buff
+                if 'choosebuff' in url_parameters.get('op', default=['none']):
+                    priority = 75
+                if any(v.find(u"本次复活需要") != -1 for v in response.xpath('//text()')):
+                    # 如果复活需要斗豆，则跳过复活
+                    if text == u"确认复活":
+                        continue
+                elif text == u"直接结束":
+                    # 如果复活无需斗豆，则不结束
+                    continue
             yield scrapy.Request(url=url, callback=self.parse, priority=priority)
 
     def start_requests(self):
