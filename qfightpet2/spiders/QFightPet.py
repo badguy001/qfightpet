@@ -246,7 +246,7 @@ class Daemon(scrapy.Spider):
                 # 优先选择复活buff
                 if 'choosebuff' in url_parameters.get('op', ['none']):
                     priority = 75
-                if any(v.find(u"本次复活需要") != -1 for v in response.xpath('//text()')):
+                if any(v.find(u"本次复活需要") != -1 for v in response.xpath('//text()').extract()):
                     # 如果复活需要斗豆，则跳过复活
                     if text == u"确认复活":
                         continue
