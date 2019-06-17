@@ -151,7 +151,7 @@ class Daemon(scrapy.Spider):
     not_allow_url_parameters.append({'cmd': 'factionarmy', 'op': 'viewRevive'})  # 帮派远征不能重生（消耗斗豆）
     not_allow_url_parameters.append({'cmd': 'luandou', 'op': '1'})  # 乱斗刷新
     not_allow_url_parameters.append({'cmd': 'element', 'subtype': '8'})  # 遥控骰子
-    not_allow_url_parameters.append({'cmd': 'zodiacdungeon', 'op': 'backtolife'})  # 十二宫花斗豆复活
+    # not_allow_url_parameters.append({'cmd': 'zodiacdungeon', 'op': 'backtolife'})  # 十二宫花斗豆复活
     not_allow_url_parameters.append({'cmd': 'showwulintop'})  # 查看武林战况
     not_allow_url_parameters.append({'cmd': 'wulinrank'})  # 查看武林战况
     not_allow_url_parameters.append({'cmd': 'sect_task', 'subtype': '1'})  # 门派任务花斗豆刷新委托人
@@ -168,7 +168,7 @@ class Daemon(scrapy.Spider):
         else:
             self.stat["null"] = self.stat["null"] + 1
         # 获取任务等级
-        if 'index' in tmp.get('cmd', default=['none']):
+        if 'index' in tmp.get('cmd', ['none']):
             for ttt in response.xpath('//text()').extract():
                 p = re.compile(u"等级:([0-9]+)")
                 for l in p.findall(ttt):
@@ -217,9 +217,9 @@ class Daemon(scrapy.Spider):
             if self.judge_over_limit(url_parameters):
                 continue
             #  乐斗boss不计数
-            if 'fight' in url_parameters.get('cmd', default=['none']) and \
+            if 'fight' in url_parameters.get('cmd', ['none']) and \
                     'B_UID' in url_parameters and len(url_parameters['B_UID']) > 0 and \
-                    len(url_parameters.get['B_UID'][0]) <= 5:
+                    len(url_parameters['B_UID'][0]) <= 5:
                 None
             else:
                 self.judge_and_add_commit(url_parameters)
@@ -229,22 +229,22 @@ class Daemon(scrapy.Spider):
             elif u"好友" == text:
                 priority = 25
             # 乐斗顺序
-            if 'fight' in url_parameters.get('cmd', default=['none']):
-                if '10' in url_parameters.get('type', default=['none']):
+            if 'fight' in url_parameters.get('cmd', ['none']):
+                if '10' in url_parameters.get('type', ['none']):
                     priority = 25  # 侠侣乐斗
                 if 'B_UID' in url_parameters and len(url_parameters['B_UID']) > 0 and \
                         len(url_parameters['B_UID'][0]) <= 5:
                     priority = 75  # 乐斗boss
             # 十二宫
-            if 'zodiacdungeon' in url_parameters.get('cmd', default=['none']):
+            if 'zodiacdungeon' in url_parameters.get('cmd', ['none']):
                 # 十二宫优先进入等级比自己高10级的场景
-                if 'showautofightpage' in url_parameters.get('op', default=['none']) or \
-                        'showfightpage' in url_parameters.get('op', default=['none']):
+                if 'showautofightpage' in url_parameters.get('op', ['none']) or \
+                        'showfightpage' in url_parameters.get('op', ['none']):
                     if br_text.find(str(self.my_level + 10 - (self.my_level + 10) % 5) + '-' +
                                     str(self.my_level + 15 - (self.my_level + 15) % 5)) != -1:
                         priority = 75
                 # 优先选择复活buff
-                if 'choosebuff' in url_parameters.get('op', default=['none']):
+                if 'choosebuff' in url_parameters.get('op', ['none']):
                     priority = 75
                 if any(v.find(u"本次复活需要") != -1 for v in response.xpath('//text()')):
                     # 如果复活需要斗豆，则跳过复活
