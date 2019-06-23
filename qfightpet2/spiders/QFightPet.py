@@ -419,4 +419,4 @@ class Daemon(scrapy.Spider):
     def parse_vip(self, response):
         for form_selector in response.xpath("//form"):
             url = self.get_form_url(form_selector)
-            yield scrapy.Request(url=url, callback=self.parse_vip())
+            yield scrapy.Request(url=url, callback=self.parse_vip)
