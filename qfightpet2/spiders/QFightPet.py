@@ -225,7 +225,7 @@ class Daemon(scrapy.Spider):
                     continue
             # 历练只能打boss
             if u"mappush" in url_parameters.get(u"cmd", ["none"]) and u"2" in url_parameters.get(u"subtype", ["none"]):
-                if br_text.find(u"无限"):
+                if br_text.find(u"无限") or br_text.find(u"0(天书)"):
                     continue
             ##########################################
             # 后面不能再过滤url
