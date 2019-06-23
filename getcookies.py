@@ -11,7 +11,7 @@ options = Options()
 #options.add_argument('--headless')
 # options.add_argument('--user-data-dir=D:\\user_data')
 options.add_argument('--window-size=1366,768')
-
+options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36')
 
 options.add_argument('--no-sandbox')
 
@@ -37,16 +37,28 @@ def login(username, password):
     return 0
 
 
-def savecookies(filename, users):
+def savecookies(filename, users, free_lock=True):
+    if free_lock:
+        users["login_lock_flag"] = False
     with open(filename, "w") as f:
-        f.write(json.dumps(users, indent=2))
+        f.write(json.dumps(users, indent=2, ensure_ascii=False).encode("utf-8"))
 
 
 def getusers(filename):
-    with open(filename, 'r') as f:
-        us = json.loads(f.read())
-    return us
-
+    is_lock = False
+    while not is_lock:
+        if int(time.strftime("%S", time.localtime())) % 6 in [3, 4, 5]:
+            with open(filename, 'r') as f:
+                tmp = json.loads(f.read())
+            if not tmp["check_lock_flag"]:
+                tmp["login_lock_flag"] = True
+                is_lock = True
+                savecookies(filename, tmp, free_lock=False)
+            else:
+                time.sleep(1)
+        else:
+            time.sleep(1)
+    return tmp
 
 def browser_close():
     browser.close()
@@ -64,7 +76,7 @@ def open_browser():
 open_browser()
 u_file = 'users.json'
 us = getusers(u_file)
-for idx, u in enumerate(us):
+for idx, u in enumerate(us.get("users")):
     if login(u.get("yonghu"), u.get("mima")):
         u["cookies"] = browser.get_cookies()
         u["is_valid"] = True

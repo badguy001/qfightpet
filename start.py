@@ -13,7 +13,7 @@ middle_file = "cookies.txt"
 
 with open(users_file, 'r') as f:
     users = json.loads(f.read())
-for user in users:
+for user in users.get("users"):
     if user.get("is_valid", False):
         start_time = time.time()
         with open(middle_file, 'w') as one:
