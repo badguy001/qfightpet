@@ -137,10 +137,6 @@ class Daemon(scrapy.Spider):
     not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '13'})  # 历练只去最后一级
     not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '14'})  # 历练只去最后一级
     not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '15'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '16'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '17'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '18'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '19'})  # 历练只去最后一级
     not_allow_url_parameters.append({'cmd': 'factionhr', 'subtype': '5'})  # 不要变更帮派成员的职位
     not_allow_url_parameters.append({'cmd': 'sundry'})  # 禁用助手里面的设置
     # not_allow_url_parameters.append({'cmd': 'forage_war', 'subtype': '3'})  # 掠夺战况
@@ -223,7 +219,6 @@ class Daemon(scrapy.Spider):
                 None
             else:
                 self.judge_and_add_commit(url_parameters)
-            priority = 0
             # 镖行天下--选择镖师，尽量不要选择蔡八斗
             if "cargo" in tmp.get("cmd", ["none"]) and \
                     ("7" in tmp.get("op", ["none"]) or "8" in tmp.get("op", ["none"])):
@@ -235,6 +230,9 @@ class Daemon(scrapy.Spider):
                 elif u"刷新押镖" == text:
                     # 只能刷新一次
                     continue
+            ###################################
+            # 顺序控制
+            priority = 0
             if u"侠侣" == text:
                 priority = 75
             elif u"好友" == text:
@@ -264,6 +262,16 @@ class Daemon(scrapy.Spider):
                 elif text == u"直接结束":
                     # 如果复活无需斗豆，则不结束
                     continue
+            # 任务委派
+            if u"missionassign" in url_parameters.get("cmd", ["none"]) and \
+                u"2" in url_parameters.get(u"subtype", ["none"]):
+                if br_text.find(u"-S") != -1:
+                    priority = 75
+                elif br_text.find(u"-A") != -1:
+                    priority = 50
+                elif br_text.find(u"-B") != -1:
+                    priority = 25
+            ################################
             dont_filter = False
             if 'facchallenge' in url_parameters.get('cmd', ['none']) and '3' in url_parameters.get('subtype', ['none']):
                 dont_filter = True
