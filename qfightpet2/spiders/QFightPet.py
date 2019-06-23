@@ -143,7 +143,7 @@ class Daemon(scrapy.Spider):
     not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '19'})  # 历练只去最后一级
     not_allow_url_parameters.append({'cmd': 'factionhr', 'subtype': '5'})  # 不要变更帮派成员的职位
     not_allow_url_parameters.append({'cmd': 'sundry'})  # 禁用助手里面的设置
-    not_allow_url_parameters.append({'cmd': 'forage_war', 'subtype': '3'})  # 掠夺战况
+    # not_allow_url_parameters.append({'cmd': 'forage_war', 'subtype': '3'})  # 掠夺战况
     not_allow_url_parameters.append({'cmd': 'forage_war', 'subtype': '2', 'op': '1'})  # 掠夺粮仓情况
     not_allow_url_parameters.append({'cmd': 'brofight', 'subtype': '13', 'detail': '1'})  # 不要查看结拜赛的队伍信息
     not_allow_url_parameters.append({'cmd': 'brofight', 'subtype': '6'})  # 不要查看结更多战况信息
@@ -192,7 +192,7 @@ class Daemon(scrapy.Spider):
                     follow = False
                     break
             # 幻境场景内全部乐斗完了则可以返回场景选择
-            if text == u"返回飘渺幻境" and u"乐斗" not in response.xpath('//a/text()').extract():
+            if text == u"返回飘渺幻境":
                 follow = True
             if not follow:
                 continue
@@ -212,7 +212,7 @@ class Daemon(scrapy.Spider):
             br_text = self.get_same_br_text(href)
             if response.url.find('cmd=index&') == -1:
                 if (br_text.find(u"斗豆") != -1 or br_text.find(u"斗币") != -1) and br_text.find(
-                        u"领") == -1 and br_text.find(u"免费") == -1 and text != u"取消":
+                        u"领") == -1 and br_text.find(u"免费") == -1 and text != u"取消" and text != u"启程护送":
                     continue
             if self.judge_over_limit(url_parameters):
                 continue
@@ -224,6 +224,17 @@ class Daemon(scrapy.Spider):
             else:
                 self.judge_and_add_commit(url_parameters)
             priority = 0
+            # 镖行天下--选择镖师，尽量不要选择蔡八斗
+            if "cargo" in tmp.get("cmd", ["none"]) and \
+                    ("7" in tmp.get("op", ["none"]) or "8" in tmp.get("op", ["none"])):
+                if u"免费刷新次数：0" not in response.xpath("//text()").extract():
+                    if u"当前镖师：蔡八斗" in response.xpath("//text()").extract():
+                        if u"启程护送" == text:
+                            # 在可以刷新的情况下，如果是蔡八斗则刷新一次
+                            continue
+                elif u"刷新押镖" == text:
+                    # 只能刷新一次
+                    continue
             if u"侠侣" == text:
                 priority = 75
             elif u"好友" == text:
@@ -253,17 +264,18 @@ class Daemon(scrapy.Spider):
                 elif text == u"直接结束":
                     # 如果复活无需斗豆，则不结束
                     continue
-            yield scrapy.Request(url=url, callback=self.parse, priority=priority)
+            dont_filter = False
+            if 'facchallenge' in url_parameters.get('cmd', ['none']) and '3' in url_parameters.get('subtype', ['none']):
+                dont_filter = True
+            yield scrapy.Request(url=url, callback=self.parse, priority=priority, dont_filter=dont_filter)
 
     def start_requests(self):
         with open('cookies.txt', 'r') as f:
-            cookiejar = f.read()
-            p = re.compile(r'([^\n]+)')
-            cookies = re.findall(p, cookiejar)
-            cookies = (cookie.split('=', 1) for cookie in cookies)
-            cookies = dict(cookies)
-        if "uin" in cookies:
-            self.username = cookies["uin"]
+            cookiejar = json.loads(f.read())
+        cookies = dict()
+        for ck in cookiejar:
+            cookies[ck.get("name")] = ck.get("value")
+        self.username = cookies.get("uin", "")
         self.init_time_limit()
         random.shuffle(self.start_urls)
         for url in self.start_urls:

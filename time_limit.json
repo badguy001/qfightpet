@@ -599,6 +599,33 @@
         "o1417650155": 1
       }, 
       "desc": "每次查看一次结拜赛战况"
+    },
+    {
+      "one_count": {
+        "username": 0,
+        "o1129426277": 1
+      },
+      "par": {
+        "cmd": "sect",
+		"op": "trainingwithmember"
+      },
+      "day_count": {
+        "username": 0,
+        "o1129426277": 0
+      },
+      "commit_count": {
+        "username": 0,
+        "o1129426277": 0
+      },
+      "day_limit": {
+        "username": 1,
+        "o1129426277": 1
+      },
+      "one_limit": {
+        "username": 1,
+        "o1129426277": 1
+      },
+      "desc": "门派同门切磋一天一次"
     }
   ]
 }
