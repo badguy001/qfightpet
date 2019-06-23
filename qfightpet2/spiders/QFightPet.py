@@ -212,13 +212,6 @@ class Daemon(scrapy.Spider):
                     continue
             if self.judge_over_limit(url_parameters):
                 continue
-            #  乐斗boss不计数
-            if 'fight' in url_parameters.get('cmd', ['none']) and \
-                    'B_UID' in url_parameters and len(url_parameters['B_UID']) > 0 and \
-                    len(url_parameters['B_UID'][0]) <= 5:
-                None
-            else:
-                self.judge_and_add_commit(url_parameters)
             # 镖行天下--选择镖师，尽量不要选择蔡八斗
             if "cargo" in tmp.get("cmd", ["none"]) and \
                     ("7" in tmp.get("op", ["none"]) or "8" in tmp.get("op", ["none"])):
@@ -230,6 +223,19 @@ class Daemon(scrapy.Spider):
                 elif u"刷新押镖" == text:
                     # 只能刷新一次
                     continue
+            # 历练只能打boss
+            if u"mappush" in url_parameters.get(u"cmd", ["none"]) and u"2" in url_parameters.get(u"subtype", ["none"]):
+                if br_text.find(u"无限"):
+                    continue
+            ##########################################
+            # 后面不能再过滤url
+            #  乐斗boss不计数
+            if 'fight' in url_parameters.get('cmd', ['none']) and \
+                    'B_UID' in url_parameters and len(url_parameters['B_UID']) > 0 and \
+                    len(url_parameters['B_UID'][0]) <= 5:
+                None
+            else:
+                self.judge_and_add_commit(url_parameters)
             ###################################
             # 顺序控制
             priority = 0
