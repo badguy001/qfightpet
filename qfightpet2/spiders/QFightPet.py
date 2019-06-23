@@ -6,6 +6,7 @@ import urlparse
 import json
 import time
 import random
+from urllib import urlencode
 
 class Daemon(scrapy.Spider):
     name = "qfightpet"
@@ -298,6 +299,8 @@ class Daemon(scrapy.Spider):
                 continue
             self.judge_and_add_commit(url_parameters)
             yield scrapy.Request(url=url, callback=self.parse, cookies=cookies)
+        buy_vip_db_url = "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&B_UID=0&sid=&channel=0&g_ut=1&cmd=viewgoods&id=3112&pay_type=7"
+        yield scrapy.Request(url=buy_vip_db_url, callback=self.parse_vip, cookies=cookies)
 
     def closed(self, reason):
         print self.stat
@@ -398,3 +401,22 @@ class Daemon(scrapy.Spider):
 
     def get_now_time(self):
         return time.strftime("%Y%m%d%H%M%S", time.localtime())
+
+    def get_form_url(self, form_selector):
+        url = urlparse.urlparse(form_selector.xpath("./@action").extract()[0])
+        parameters = dict()
+        for input_selector in form_selector.xpath("./input[@type='hidden']"):
+            parameters[input_selector.xpath("./@name").extract()[0]] = input_selector.xpath("./@value").extract()[0]
+        if 'num' in parameters:
+            parameters['num'] = '1'
+        url_parts = list(url)
+        query = dict(urlparse.parse_qsl(url_parts[4]))
+        query.update(parameters)
+        url_parts[4] = urlencode(query)
+        url = urlparse.urlunparse(url_parts)
+        return url
+
+    def parse_vip(self, response):
+        for form_selector in response.xpath("//form"):
+            url = self.get_form_url(form_selector)
+            yield scrapy.Request(url=url, callback=self.parse_vip())
