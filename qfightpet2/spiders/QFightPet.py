@@ -24,6 +24,7 @@ class Daemon(scrapy.Spider):
     # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&B_UID=0&sid=&channel=0&g_ut=1&cmd=misty")
     # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=buy&id=3108&num=1&type=1")  # 购买月卡
     start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3108")  # 使用月卡
+    start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3112")  # 使用周卡
 
     allowed_domains = ["dld.qzapp.z.qq.com"]
     not_allow_texts = list()
@@ -256,8 +257,8 @@ class Daemon(scrapy.Spider):
                 # 十二宫优先进入等级比自己高10级的场景
                 if 'showautofightpage' in url_parameters.get('op', ['none']) or \
                         'showfightpage' in url_parameters.get('op', ['none']):
-                    if br_text.find(str(self.my_level + 10 - (self.my_level + 10) % 5) + '-' +
-                                    str(self.my_level + 15 - (self.my_level + 15) % 5)) != -1:
+                    if br_text.find(str(self.my_level + 20 - (self.my_level + 20) % 5) + '-' +
+                                    str(self.my_level + 25 - (self.my_level + 25) % 5)) != -1:
                         priority = 75
                 # 优先选择复活buff
                 if 'choosebuff' in url_parameters.get('op', ['none']):
@@ -270,13 +271,17 @@ class Daemon(scrapy.Spider):
                     # 如果复活无需斗豆，则不结束
                     continue
             # 任务委派
-            if u"missionassign" in url_parameters.get("cmd", ["none"]) and \
-                u"2" in url_parameters.get(u"subtype", ["none"]):
-                if br_text.find(u"-S") != -1:
+            if u"missionassign" in url_parameters.get("cmd", ["none"]):
+                if u"2" in url_parameters.get(u"subtype", ["none"]):
+                    if br_text.find(u"-S") != -1:
+                        priority = 75
+                    elif br_text.find(u"-A") != -1:
+                        priority = 50
+                    elif br_text.find(u"-B") != -1:
+                        priority = 25
+                if text == u"快速委派":
                     priority = 75
-                elif br_text.find(u"-A") != -1:
-                    priority = 50
-                elif br_text.find(u"-B") != -1:
+                elif text == u"开始任务":
                     priority = 25
             ################################
             dont_filter = False

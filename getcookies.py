@@ -67,7 +67,7 @@ def browser_close():
 def open_browser():
     global browser
     if platform.system() == 'Linux':
-        exec_path = 'chromedriver'
+        exec_path = './chromedriver'
     else:
         exec_path = 'chromedriver.exe'
     browser = webdriver.Chrome(executable_path=exec_path, chrome_options=options)

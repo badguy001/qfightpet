@@ -21,7 +21,7 @@ for user in users.get("users"):
         print "user:" + user.get("yonghu", "") + " start, time:" + str(start_time)
         os.system("scrapy crawl qfightpet")
         # cmdline.execute('scrapy crawl qfightpet'.split())   # 调试
-        print "user:" + user.get("yonghu", "") + " end, time:" + time.time() + ", " + str(time.time() - start_time) + "second"
+        print "user:" + user.get("yonghu", "") + " end, time:" + str(time.time()) + ", " + str(time.time() - start_time) + "second"
     else:
         print "user:" + user.get("yonghu", "") + " cookies is unvaild"
     time.sleep(1)
