@@ -77,7 +77,7 @@ open_browser()
 u_file = 'users.json'
 us = getusers(u_file)
 for idx, u in enumerate(us.get("users")):
-    if login(u.get("yonghu"), u.get("mima")):
+    if not u.get("is_valid") and login(u.get("yonghu"), u.get("mima")):
         u["cookies"] = browser.get_cookies()
         u["is_valid"] = True
         u["login_date"] = time.strftime("%Y%m%d%H%M%S", time.localtime())

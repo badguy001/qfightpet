@@ -7,24 +7,33 @@ import json
 import time
 import random
 from urllib import urlencode
+import requests
+
 
 class Daemon(scrapy.Spider):
     name = "qfightpet"
     username = str()
+    myqq = str()
+    mypackage = list()
     time_limit = {}
     limit_file = 'time_limit.json'
     handle_httpstatus_list = [404]
     stat = dict({'null': 0})
     my_level = 0  # 等级
+    cookies = dict()
 
     start_urls = list()
     start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?cmd=index&channel=0")
-    start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=oblation&id=3089") # 供奉还魂丹
-    start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=oblation&id=3181") # 供奉传功符
+    start_urls.append(
+        "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=oblation&id=3089")  # 供奉还魂丹
+    start_urls.append(
+        "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=oblation&id=3181")  # 供奉传功符
     # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&B_UID=0&sid=&channel=0&g_ut=1&cmd=misty")
     # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=buy&id=3108&num=1&type=1")  # 购买月卡
-    start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3108")  # 使用月卡
-    start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3112")  # 使用周卡
+    start_urls.append(
+        "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3108")  # 使用月卡
+    start_urls.append(
+        "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3112")  # 使用周卡
 
     allowed_domains = ["dld.qzapp.z.qq.com"]
     not_allow_texts = list()
@@ -115,6 +124,7 @@ class Daemon(scrapy.Spider):
     not_allow_texts.append(u"师徒妻拜")
     not_allow_texts.append(u"背包")
     not_allow_texts.append(u"进阶")
+    not_allow_texts.append(u"任务派遣中心")
 
     not_allow_url_parameters = list()
     not_allow_url_parameters.append({'cmd': 'lottery'})  # 武器弹珠
@@ -153,6 +163,8 @@ class Daemon(scrapy.Spider):
     not_allow_url_parameters.append({'cmd': 'showwulintop'})  # 查看武林战况
     not_allow_url_parameters.append({'cmd': 'wulinrank'})  # 查看武林战况
     not_allow_url_parameters.append({'cmd': 'sect_task', 'subtype': '1'})  # 门派任务花斗豆刷新委托人
+    not_allow_url_parameters.append({'cmd': 'secttournament', 'op': 'showinvitee'})  # 门派邀请赛，不要邀请
+    not_allow_url_parameters.append({'cmd': 'secttournament', 'op': 'quitfromgroup'})  # 门派邀请赛，不要退出队伍
 
     def parse(self, response):
         assert isinstance(response, scrapy.http.response.Response)
@@ -214,6 +226,12 @@ class Daemon(scrapy.Spider):
                     continue
             if self.judge_over_limit(url_parameters):
                 continue
+            # 问鼎天下只攻占没人占领的
+            if "tbattle" in url_parameters.get("cmd", ["none"]) and "occupy" in url_parameters.get("op", ["none"]):
+                if br_text.find(u"暂无") != -1:
+                    pass
+                else:
+                    continue
             # 镖行天下--选择镖师，尽量不要选择蔡八斗
             if "cargo" in tmp.get("cmd", ["none"]) and \
                     ("7" in tmp.get("op", ["none"]) or "8" in tmp.get("op", ["none"])):
@@ -227,7 +245,7 @@ class Daemon(scrapy.Spider):
                     continue
             # 历练只能打boss
             if u"mappush" in url_parameters.get(u"cmd", ["none"]) and u"2" in url_parameters.get(u"subtype", ["none"]):
-                if br_text.find(u"无限") or br_text.find(u"0(天书)"):
+                if br_text.find(u"无限") != -1 or br_text.find(u"0(天书)") != -1:
                     continue
             ##########################################
             # 后面不能再过滤url
@@ -235,7 +253,7 @@ class Daemon(scrapy.Spider):
             if 'fight' in url_parameters.get('cmd', ['none']) and \
                     'B_UID' in url_parameters and len(url_parameters['B_UID']) > 0 and \
                     len(url_parameters['B_UID'][0]) <= 5:
-                None
+                pass
             else:
                 self.judge_and_add_commit(url_parameters)
             ###################################
@@ -274,15 +292,18 @@ class Daemon(scrapy.Spider):
             if u"missionassign" in url_parameters.get("cmd", ["none"]):
                 if u"2" in url_parameters.get(u"subtype", ["none"]):
                     if br_text.find(u"-S") != -1:
-                        priority = 75
+                        priority = 100
+                        url = url + "&level=30"
                     elif br_text.find(u"-A") != -1:
-                        priority = 50
+                        priority = 90
+                        url = url + "&level=20"
                     elif br_text.find(u"-B") != -1:
-                        priority = 25
+                        priority = 80
+                        url = url + "&level=10"
                 if text == u"快速委派":
-                    priority = 75
+                    priority = 30 + int(tmp.get("level", ["0"])[0])
                 elif text == u"开始任务":
-                    priority = 25
+                    priority = 25 + int(tmp.get("level", ["0"])[0])
             ################################
             dont_filter = False
             if 'facchallenge' in url_parameters.get('cmd', ['none']) and '3' in url_parameters.get('subtype', ['none']):
@@ -295,7 +316,9 @@ class Daemon(scrapy.Spider):
         cookies = dict()
         for ck in cookiejar:
             cookies[ck.get("name")] = ck.get("value")
+        self.cookies = cookies
         self.username = cookies.get("uin", "")
+        self.myqq = cookies.get("uin", "").lstrip("o").lstrip("0")
         self.init_time_limit()
         random.shuffle(self.start_urls)
         for url in self.start_urls:
@@ -306,6 +329,11 @@ class Daemon(scrapy.Spider):
             yield scrapy.Request(url=url, callback=self.parse, cookies=cookies)
         buy_vip_db_url = "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&B_UID=0&sid=&channel=0&g_ut=1&cmd=viewgoods&id=3112&pay_type=7"
         yield scrapy.Request(url=buy_vip_db_url, callback=self.parse_vip, cookies=cookies)
+        self.assignment()
+        self.update_mypackage()
+        self.auto_use_goods()
+        self.upgrade_weapon_or_skill()
+        self.mappush()
 
     def closed(self, reason):
         print self.stat
@@ -348,7 +376,7 @@ class Daemon(scrapy.Spider):
         url_parameters = urlparse.parse_qs(urlparse.urlparse(response.url).query)
         for idx, one_par_limit in enumerate(self.time_limit["parameters_limits"]):
             if len(one_par_limit["par"]) > 0 and all((k in url_parameters and v in url_parameters[k]) for k, v in
-                                                            one_par_limit["par"].iteritems()):
+                                                     one_par_limit["par"].iteritems()):
                 if is_success:
                     self.time_limit["parameters_limits"][idx]["one_count"][self.username] = \
                         self.time_limit["parameters_limits"][idx]["one_count"][self.username] + 1
@@ -390,7 +418,8 @@ class Daemon(scrapy.Spider):
             self.time_limit["last_update_time"][self.username] = self.get_now_time()
         self.time_limit["update_time"][self.username] = self.get_now_time()
         is_diff_day = False
-        if self.time_limit["update_time"][self.username][8:10] >= '07' and self.time_limit["last_update_time"][self.username][8:10] < '07':
+        if self.time_limit["update_time"][self.username][8:10] >= '07' and self.time_limit["last_update_time"][
+                                                                               self.username][8:10] < '07':
             is_diff_day = True
         for idx, one_par_limit in enumerate(self.time_limit["parameters_limits"]):
             if self.username not in one_par_limit["day_limit"]:
@@ -425,3 +454,276 @@ class Daemon(scrapy.Spider):
         for form_selector in response.xpath("//form"):
             url = self.get_form_url(form_selector)
             yield scrapy.Request(url=url, callback=self.parse_vip)
+
+    def myreq(self, url):
+        headers = {
+            'user-agent': "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36",
+            "Accept": "text / html, application / xhtml + xml, application / xml;q = 0.9, image / webp, image / apng, * / *;q = 0.8, application / signed - exchange;v = b3",
+            "Accept - Encoding": "gzip, deflate",
+            "Accept - Language": "zh - CN, zh;q = 0.9"
+        }
+        resp = requests.get(url, headers=headers, cookies=self.cookies)
+        return json.loads(resp.text)
+
+    # 任务委派处理
+    def assignment(self):
+        urls = dict()
+        urls["get_base"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=assignment&op=0"
+        urls["refresh"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=assignment&op=1"
+        urls["get_award"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=assignment&mission_id=%s&op=8"
+        urls["select_mem"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=assignment&mission_id=%s&op=6"
+        urls["start"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=assignment&mission_id=%s&op=7"
+        urls["get_detail"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=assignment&mission_id=%s&op=4"
+        miss_type = {
+            "S": "1",
+            "A": "2",
+            "B": "3"
+        }
+        base_info = self.myreq(urls.get("get_base"))  # 任务基本信息
+        if base_info.get("result") != "0":
+            return
+        max_num = int(base_info.get("dayMissionNum"))  # 一天可以接受的最大任务数量
+        accepted_num = int(base_info.get("acceptedMissionNum"))  # 已经接受的任务数量
+        this_accepted_num = 0  # 本次执行接受的任务数量
+        # 先领奖励
+        for accepted in base_info.get("acceptedMissionInfo"):
+            if accepted.get("remainTime") == "0":
+                tmp = self.myreq(urls.get("get_award") % accepted.get("missionId"))
+        if accepted_num >= max_num:
+            # 已经没有任务可以做了
+            return
+        base_info = self.myreq(urls.get("get_base"))  # 领完任务后刷新一次基本信息
+        doing_num = len(base_info.get("acceptedMissionInfo"))  # 正在进行中的任务数量
+        refresh_need_doudou = int(base_info.get("refreshDoudouNum")) > 0  # 刷新任务列表是否需要斗豆
+        mission_list = base_info.get("standyMissionInfo")
+
+        if all(miss.get("accepted") == "1" for miss in mission_list):
+            # 所有的任务都正在做，则退出等待任务执行完后再看
+            return
+        # 先处理当前所有可接受任务都是B级的情况
+        all_acceptable_is_b = all(
+            m.get("accepted") == "0" and m.get("type") == miss_type.get("B") for m in mission_list)
+        if all_acceptable_is_b and doing_num > 0:
+            # 还有正在执行的任务，则等任务执行完后再看
+            return
+        elif all_acceptable_is_b and doing_num == 0 and refresh_need_doudou:
+            # 无法免费刷新了，又没有在做的任务，则先接受一个B级任务
+            for m in [miss for miss in mission_list if miss.get("accepted") == "0"]:
+                tmp = self.myreq(urls.get("select_mem") % m.get("missionId"))
+                if tmp.get("result") != "0":
+                    continue
+                tmp = self.myreq(urls.get("start") % m.get("missionId"))
+                if tmp.get("result") != "0":
+                    continue
+                this_accepted_num = this_accepted_num + 1
+                return  # 成功接受一个B级任务后就可以退出了
+            # 到这里说明无法接受现有任务，也无法免费刷新任务，只能退出，等新的一天到来
+            return
+        elif all_acceptable_is_b and doing_num == 0 and not refresh_need_doudou:
+            # 到这里说明可以免费刷新，则刷新一次后再判断（递归调这个方法即可）
+            self.myreq(urls.get("refresh"))
+            self.assignment()
+            return
+        # 找出所有可以接受的任务列表
+        acceptable_num = 0
+        for m in [n for n in mission_list if n.get("accepted") == "0" and n.get("type") != miss_type.get("B")]:
+            # 通过能否选择佣兵来测试能否做这个任务
+            tmp = self.myreq(urls.get("select_mem") % m.get("missionId"))
+            if tmp.get("result") == "0":
+                m["acceptable"] = True
+                acceptable_num = acceptable_num + 1
+            else:
+                m["acceptable"] = False
+        if acceptable_num == 0 and doing_num > 0:
+            # 等正在做的任务完成后再看有没有可以做的任务
+            return
+        if acceptable_num == 0 and doing_num == 0 and refresh_need_doudou:
+            # 到这里说明无法接受现有任务，也无法免费刷新任务，只能退出，等新的一天到来
+            return
+        if acceptable_num == 0 and doing_num == 0 and not refresh_need_doudou:
+            tmp = self.myreq(urls.get("refresh"))
+            self.assignment()
+            return
+        if any(m.get("type") == miss_type.get("S") and not m.get("acceptable") for m in mission_list):
+            tmp = self.myreq(urls.get("get_detail") % m.get("missionId"))
+            if tmp.get("result") == "-1":
+                return
+            # 如果待接受任务中有S级任务，但是现在却可能是佣兵被占用了导致接受不了，则等任务结束后再看
+            if any(p.get("isQualified") == "1" and p.get("status") == "2" for p in tmp.get("mercernaryInfo")):
+                return
+        # 先做S级，在做A级
+        for t in [miss_type.get("S"), miss_type.get("A")]:
+            for m in [n for n in mission_list if n.get("type") == t and n.get("acceptable")]:
+                tmp = self.myreq(urls.get("select_mem") % m.get("missionId"))
+                if tmp.get("result") != "0":
+                    continue
+                tmp = self.myreq(urls.get("start") % m.get("missionId"))
+                if tmp.get("result") != "0":
+                    continue
+                this_accepted_num = this_accepted_num + 1
+
+    def update_mypackage(self):
+        url = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=view&kind=0&sub=2&type=4&selfuin=%s"
+        resp = self.myreq(url % self.myqq)
+        if resp.get("result") == "0":
+            self.mypackage = resp.get("bag")
+
+    def auto_use_goods(self):
+        url = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=use&selfuin=%s&id=%s"
+        for g in self.mypackage:
+            if g.get("canuse") != "1":
+                continue
+            if not (g.get("name").endswith(u"信物") or g.get("name").endswith(u"宝箱") or g.get("name").endswith(u"锦囊")):
+                continue
+            tmp = self.myreq(url % (self.myqq, g.get("id")))
+            while tmp.get("result") == "0":
+                g["num"] = str(int(g["num"]) - 1)
+                tmp = self.myreq(url % (self.myqq, g.get("id")))
+
+    def upgrade_weapon_or_skill(self):
+        urls = dict()
+        urls["get_list"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=updatelist"
+        urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=update&id=%s"
+        weapon_list = dict()
+        skill_list = dict()
+        upgrade_num = 0
+        resp = self.myreq(urls.get("get_list"))
+        if resp.get("result") != "0" or resp.get("gold_scroll_num") == "0":
+            return
+        weapon_list = resp.get("item")
+        skill_list = resp.get("item1")
+        for w in weapon_list:
+            if w.get("flag") != "1" or w.get("num") == "0" or int(w.get("num")) <= int(resp.get("gold_scroll_num")) or \
+                    w.get("percent") != u"必成":
+                continue
+            tmp = self.myreq(urls.get("upgrade") % w.get("id"))
+            resp["gold_scroll_num"] = str(int(resp.get("gold_scroll_num")) - int(w.get("num")))
+            upgrade_num = upgrade_num + 1
+        for w in skill_list:
+            if w.get("flag") != "1" or w.get("num") == "0" or int(w.get("num")) <= int(resp.get("gold_scroll_num")) or \
+                    w.get("percent") != u"必成":
+                continue
+            tmp = self.myreq(urls.get("upgrade") % w.get("id"))
+            resp["gold_scroll_num"] = str(int(resp.get("gold_scroll_num")) - int(w.get("num")))
+            upgrade_num = upgrade_num + 1
+        if upgrade_num == 0:
+            return
+        else:
+            self.upgrade_weapon_or_skill()
+
+    # 历练
+    def mappush(self):
+        from operator import itemgetter
+        urls = dict()
+        urls["get_map_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=mappush&mapid=%s&type=2"
+        urls["fight_npc"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=mappush&npcid=%s&type=1"
+        urls["get_newmercenary_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=newmercenary&sub=0"
+        base_newmercenary = list()  # 能在历练获取到的佣兵，以及对应的获取地图
+        base_newmercenary.append(
+            {
+                "name": [u"令狐冲", u"真·令狐冲"],
+                "mapid": "2",
+                "npc": "6034"
+            })
+        base_newmercenary.append(
+            {
+                "name": [u"丘处机", u"奥·丘处机"],
+                "mapid": "4",
+                "npc": "6074"
+            })
+        base_newmercenary.append(
+            {
+                "name": [u"小龙女", u"娇·小龙女"],
+                "mapid": "5",
+                "npc": "6094"
+            })
+        base_newmercenary.append(
+            {
+                "name": [u"丁春秋", u"毒·丁春秋"],
+                "mapid": "3",
+                "npc": "6054"
+            })
+        base_newmercenary.append(
+            {
+                "name": [u"韦小宝", u"义·韦小宝"],
+                "mapid": "6",
+                "npc": "6114"
+            })
+        base_newmercenary.append(
+            {
+                "name": [u"赵敏", u"灵·赵敏"],
+                "mapid": "10",
+                "npc": "6194"
+            })
+        base_newmercenary.append(
+            {
+                "name": [u"扫地僧", u"宗·扫地僧"],
+                "mapid": "7",
+                "npc": "6134"
+            })
+        base_newmercenary.append(
+            {
+                "name": [u"鹤笔翁", u"冥·鹤笔翁"],
+                "mapid": "8",
+                "npc": "6154"
+            })
+        base_newmercenary.append(
+            {
+                "name": [u"韦一笑", u"血·韦一笑"],
+                "mapid": "9",
+                "npc": "6174"
+            })
+        base_info = self.myreq(urls.get("get_newmercenary_info"))
+        if base_info.get("result") != 0:
+            return
+        own_newmercenary = base_info.get("array")  # 已经拥有的佣兵
+        own_debris = base_info.get("debris_arr")  # 还没有的佣兵，但已经有碎片了
+        # 找出能获取，但又还没有的佣兵列表
+        for b in base_newmercenary:
+            b["own"] = any(o.get("name") in b.get("name") for o in own_newmercenary)
+            b["debris_num"] = 50
+        for o in own_newmercenary:
+            for b in base_newmercenary:
+                if o.get("name") in b.get("name"):
+                    b["debris_num"] = int(o.get("debris_need")) - int(o.get("debris"))
+                    if b["debris_num"] == 0:
+                        b["debris_num"] = -1  # -1表示无需再获取碎片了
+        for o in own_debris:
+            for b in base_newmercenary:
+                if o.get("name") in b.get("name"):
+                    b["debris_num"] = int(o.get("debris_need")) - int(o.get("debris"))
+                    if b["debris_num"] == 0:
+                        b["debris_num"] = 50
+        # 对需要的碎片数和地图进行升序排序，先获取需要的碎片数少的
+        base_newmercenary.sort(key=itemgetter("debris_num", "mapid"))
+        # 按顺序去打npc
+        for b in base_newmercenary:
+            map_info = self.myreq(urls.get("get_map_info") % b.get("mapid"))
+            if map_info.get("result") != "0":
+                continue
+            for npc in map_info.get("monster_infos_"):
+                if npc.get("monster_id_") == b.get("npc"):
+                    if npc.get("challenge_times_") == "0":
+                        continue  # npc 没有挑战次数了
+                    for i in range(1, int(npc.get("challenge_times_"))):
+                        tmp = self.myreq(urls.get("fight_npc") % b.get("npc"))
+                        if tmp.get("result") == "876":
+                            return  # 没有活力了
+                        elif tmp.get("result") == "-1":
+                            return  # 不知道什么错误
+        # 这里说明还有活力，从高到低打npc，获取无字天书
+        for i in range(20, 1, -1):
+            map_info = self.myreq(urls.get("get_map_info") % b.get("mapid"))
+            if map_info.get("result") != "0":
+                continue
+            for npc in reversed(map_info.get("monster_infos_")):
+                if npc.get("challenge_times_") in ["0", "-1"]:
+                    continue
+                elif int(npc.get("challenge_times_")) > 0:
+                    for j in range(1, int(npc.get("challenge_times_"))):
+                        tmp = self.myreq(urls.get("fight_npc") % npc.get("monster_id_"))
+                        if tmp.get("result") == "876":
+                            return  # 没有活力了
+                        elif tmp.get("result") == "-1":
+                            return  # 不知道什么错误
+
