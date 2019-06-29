@@ -134,21 +134,7 @@ class Daemon(scrapy.Spider):
     not_allow_url_parameters.append({'cmd': 'friendlist', 'type': '1'})  # 斗友
     not_allow_url_parameters.append({'cmd': 'fame_hall'})  # 名人堂
     not_allow_url_parameters.append({'cmd': 'viewgoods'})  # 查看各种物品
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '1'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '2'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '3'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '4'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '5'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '6'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '7'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '8'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '9'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '10'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '11'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '12'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '13'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '14'})  # 历练只去最后一级
-    not_allow_url_parameters.append({'cmd': 'mappush', 'subtype': '2', 'mapid': '15'})  # 历练只去最后一级
+    not_allow_url_parameters.append({'cmd': 'mappush'})  # 历练只去最后一级
     not_allow_url_parameters.append({'cmd': 'factionhr', 'subtype': '5'})  # 不要变更帮派成员的职位
     not_allow_url_parameters.append({'cmd': 'sundry'})  # 禁用助手里面的设置
     # not_allow_url_parameters.append({'cmd': 'forage_war', 'subtype': '3'})  # 掠夺战况
@@ -334,6 +320,9 @@ class Daemon(scrapy.Spider):
         self.auto_use_goods()
         self.upgrade_weapon_or_skill()
         self.mappush()
+        self.newmercenary()
+        self.weapon_awaken()
+        self.achievement()
 
     def closed(self, reason):
         print self.stat
@@ -463,7 +452,10 @@ class Daemon(scrapy.Spider):
             "Accept - Language": "zh - CN, zh;q = 0.9"
         }
         resp = requests.get(url, headers=headers, cookies=self.cookies)
-        return json.loads(resp.text)
+        try:
+            return json.loads(resp.text)
+        except:
+            return json.loads(resp.text.replace('\\', ''))
 
     # 任务委派处理
     def assignment(self):
@@ -538,6 +530,15 @@ class Daemon(scrapy.Spider):
             # 等正在做的任务完成后再看有没有可以做的任务
             return
         if acceptable_num == 0 and doing_num == 0 and refresh_need_doudou:
+            for m in [n for n in mission_list if n.get("accepted") == "0" and n.get("type") == miss_type.get("B")]:
+                tmp = self.myreq(urls.get("select_mem") % m.get("missionId"))
+                if tmp.get("result") != "0":
+                    continue
+                tmp = self.myreq(urls.get("start") % m.get("missionId"))
+                if tmp.get("result") != "0":
+                    continue
+                this_accepted_num = this_accepted_num + 1
+                return  # 成功接受一个B级任务后就可以退出了
             # 到这里说明无法接受现有任务，也无法免费刷新任务，只能退出，等新的一天到来
             return
         if acceptable_num == 0 and doing_num == 0 and not refresh_need_doudou:
@@ -621,60 +622,60 @@ class Daemon(scrapy.Spider):
         base_newmercenary = list()  # 能在历练获取到的佣兵，以及对应的获取地图
         base_newmercenary.append(
             {
-                "name": [u"令狐冲", u"真·令狐冲"],
+                "name": [u"令狐冲", u"真・令狐冲"],
                 "mapid": "2",
                 "npc": "6034"
             })
         base_newmercenary.append(
             {
-                "name": [u"丘处机", u"奥·丘处机"],
+                "name": [u"丘处机", u"奥・丘处机"],
                 "mapid": "4",
                 "npc": "6074"
             })
         base_newmercenary.append(
             {
-                "name": [u"小龙女", u"娇·小龙女"],
+                "name": [u"小龙女", u"娇・小龙女"],
                 "mapid": "5",
                 "npc": "6094"
             })
         base_newmercenary.append(
             {
-                "name": [u"丁春秋", u"毒·丁春秋"],
+                "name": [u"丁春秋", u"毒・丁春秋"],
                 "mapid": "3",
                 "npc": "6054"
             })
         base_newmercenary.append(
             {
-                "name": [u"韦小宝", u"义·韦小宝"],
+                "name": [u"韦小宝", u"义・韦小宝"],
                 "mapid": "6",
                 "npc": "6114"
             })
         base_newmercenary.append(
             {
-                "name": [u"赵敏", u"灵·赵敏"],
+                "name": [u"赵敏", u"灵・赵敏"],
                 "mapid": "10",
                 "npc": "6194"
             })
         base_newmercenary.append(
             {
-                "name": [u"扫地僧", u"宗·扫地僧"],
+                "name": [u"扫地僧", u"宗・扫地僧"],
                 "mapid": "7",
                 "npc": "6134"
             })
         base_newmercenary.append(
             {
-                "name": [u"鹤笔翁", u"冥·鹤笔翁"],
+                "name": [u"鹤笔翁", u"冥・鹤笔翁"],
                 "mapid": "8",
                 "npc": "6154"
             })
         base_newmercenary.append(
             {
-                "name": [u"韦一笑", u"血·韦一笑"],
+                "name": [u"韦一笑", u"血・韦一笑"],
                 "mapid": "9",
                 "npc": "6174"
             })
         base_info = self.myreq(urls.get("get_newmercenary_info"))
-        if base_info.get("result") != 0:
+        if base_info.get("result") != "0":
             return
         own_newmercenary = base_info.get("array")  # 已经拥有的佣兵
         own_debris = base_info.get("debris_arr")  # 还没有的佣兵，但已经有碎片了
@@ -705,7 +706,7 @@ class Daemon(scrapy.Spider):
                 if npc.get("monster_id_") == b.get("npc"):
                     if npc.get("challenge_times_") == "0":
                         continue  # npc 没有挑战次数了
-                    for i in range(1, int(npc.get("challenge_times_"))):
+                    for i in range(1, int(npc.get("challenge_times_")) + 1):
                         tmp = self.myreq(urls.get("fight_npc") % b.get("npc"))
                         if tmp.get("result") == "876":
                             return  # 没有活力了
@@ -720,10 +721,110 @@ class Daemon(scrapy.Spider):
                 if npc.get("challenge_times_") in ["0", "-1"]:
                     continue
                 elif int(npc.get("challenge_times_")) > 0:
-                    for j in range(1, int(npc.get("challenge_times_"))):
+                    for j in range(1, int(npc.get("challenge_times_")) + 1):
                         tmp = self.myreq(urls.get("fight_npc") % npc.get("monster_id_"))
                         if tmp.get("result") == "876":
                             return  # 没有活力了
                         elif tmp.get("result") == "-1":
                             return  # 不知道什么错误
 
+    # 佣兵升级悟性和资质和等级
+    def newmercenary(self):
+        urls = dict()
+        urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=newmercenary&sub=0"
+        urls["upgrade_wuxing"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=newmercenary&id=%s&sub=4"
+        urls["upgrade_zizhi"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=newmercenary&id=%s&type=1&sub=5"
+        urls["upgrade_zizhi2"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=newmercenary&id=%s&type=2&sub=5"
+        urls["upgrade_level"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=newmercenary&id=%s&count=10&tfl=1&sub=3"
+        base_info = self.myreq(urls.get("get_base_info"))
+        if base_info.get("result") != "0":
+            return
+        # 升级资质，到卓越就可以
+        for n in [m for m in base_info.get("array") if m.get("quality") != "3"]:
+            while int(base_info.get("htzj")) > 0 and n.get("quality") != "3":
+                # 有还童卷轴
+                tmp = self.myreq(urls.get("upgrade_zizhi") % n.get("id"))
+                base_info["htzj"] = str(int(base_info.get("htzj")) - 1)  # 数量减一
+                if tmp.get("result") != "0":
+                    break
+                if any(y.get("id") == n.get("id") and y.get("quality") == "3" for y in tmp.get("array")):
+                    n["quality"] = "3"
+                    break  # 已经达到卓越了
+            while int(base_info.get("htts")) > 0 and n.get("quality") != "3":
+                # 有还童天书
+                tmp = self.myreq(urls.get("upgrade_zizhi2") % n.get("id"))
+                base_info["htts"] = str(int(base_info.get("htts")) - 1)  # 数量减一
+                if tmp.get("result") != "0":
+                    break
+                if any(y.get("id") == n.get("id") and y.get("quality") == "3" for y in tmp.get("array")):
+                    n["quality"] = "3"
+                    break  # 已经达到卓越了
+        # 升级悟性
+        for n in [m for m in base_info.get("array") if m.get("savvy") != "10"]:
+            while n.get("savvy") != "10" and base_info.get("wxd") > int(n.get("savvy")) / 2 + 1:
+                tmp = self.myreq(urls.get("upgrade_wuxing") % n.get("id"))
+                base_info["wxd"] = str(int(base_info.get("wxd")) - int(n.get("savvy")) / 2 + 1)  # 数量减一
+                if tmp.get("result") != "0":
+                    break
+                for x in [y for y in tmp.get("array") if y.get("id") == n.get("id")]:
+                    n["savvy"] = x.get("savvy")
+        # 卓越和悟性10的可以加经验
+        for n in [m for m in base_info.get("array") if m.get("savvy") == "10" and m.get("quality") == "3" and int(m.get("lvl")) < 20]:
+            if int(base_info.get("yueli")) > 1000 and int(n.get("lvl")) < 20:
+                tmp = self.myreq(urls.get("upgrade_level"))
+                base_info["yueli"] = tmp.get("yueli", "0")
+                n["lvl"] = tmp.get("lvl", n.get("lvl"))
+                if tmp.get("result") != "0":
+                    continue
+
+    # 武器觉醒
+    def weapon_awaken(self):
+        import math
+        urls = dict()
+        urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=awaken"
+        urls["upgrade_weapon"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=awaken&op=upgrade&base=%s&times=%s"
+        bless_got_when_fail = 2
+        base_info = self.myreq(urls.get("get_base_info"))
+        if base_info.get("result", "-1") != "0":
+            return
+        for weapon in [w for w in base_info.get("infos") if w.get("owned_weapon_id") != "0" and w.get("awaken_level") != "10"]:
+            consume_goods_num = int(weapon.get("consume_goods_num"))
+            consume_goods_owned_num = int(weapon.get("consume_goods_owned_num"))
+            bless = int(weapon.get("bless"))
+            max_bless = int(weapon.get("max_bless"))
+            needed_bless_count = math.ceil(((max_bless - bless) / bless_got_when_fail)) + 1
+            # 判断物品够不够用来升级
+            if consume_goods_owned_num >= needed_bless_count * consume_goods_num:
+                # 先10次10次的升
+                for i in range(0, int(needed_bless_count * consume_goods_num / 10)):
+                    tmp = self.myreq(urls.get("upgrade_weapon") % (weapon.get("weapon_base_id"), '10'))
+                    if tmp.get("result") != "0":
+                        return
+                    if tmp.get("msg").find("失败") != -1:
+                        continue
+                    else:
+                        return
+                # 然后再一个一个升
+                for i in range(0, int(needed_bless_count * consume_goods_num % 10)):
+                    tmp = self.myreq(urls.get("upgrade_weapon") % (weapon.get("weapon_base_id"), '1'))
+                    if tmp.get("result") != "0":
+                        return
+                    if tmp.get("msg").find("失败") != -1:
+                        continue
+                    else:
+                        return
+
+    # 徽章升级
+    def achievement(self):
+        from operator import itemgetter
+        urls = dict()
+        urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=achievement"
+        urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=achievement&achievement_id=%s&times=%s&op=upgradelevel"
+        base_info = self.myreq(urls.get("get_base_info"))
+        if base_info.get("result") != "0":
+            return
+        base_info.get("badges").sort(key=itemgetter("level"))
+        for x in [y for y in base_info.get("badges") if y.get("status") == "1" and y.get("level") != "7"]:
+            tmp = self.myreq(urls.get("upgrade") % (x.get("achievement_id"), "1"))
+            if tmp.get("result") != "0":
+                return
