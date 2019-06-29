@@ -323,6 +323,8 @@ class Daemon(scrapy.Spider):
         self.newmercenary()
         self.weapon_awaken()
         self.achievement()
+        self.doppelganger_weapon()
+        self.doppelganger_skill()
 
     def closed(self, reason):
         print self.stat
@@ -826,5 +828,51 @@ class Daemon(scrapy.Spider):
         base_info.get("badges").sort(key=itemgetter("level"))
         for x in [y for y in base_info.get("badges") if y.get("status") == "1" and y.get("level") != "7"]:
             tmp = self.myreq(urls.get("upgrade") % (x.get("achievement_id"), "1"))
+            if tmp.get("result") != "0":
+                return
+
+    # 仙化武器
+    def doppelganger_weapon(self):
+        from operator import itemgetter
+        urls = dict()
+        urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=doppelganger&subtype=%s&op=2"
+        urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=doppelganger&id=%s&op=7"
+        base_info = self.myreq(urls.get("get_base_info") % "1")
+        if base_info.get("result") != "0":
+            return
+        for i in range(2, 5):
+            tmp = self.myreq(urls.get("get_base_info") % str(i))
+            if tmp.get("result") != "0":
+                return
+            for t in tmp.get("weapon"):
+                base_info["weapon"].append(t)
+        for t in base_info.get("weapon"):
+            t["need_goods_num"] = int(t.get("updateGoodsNum"))
+        base_info.get("weapon").sort(key=itemgetter("need_goods_num"))
+        for weapon in [w for w in base_info.get("weapon") if w.get("successRate") == u"必成" and w.get("need_goods_num") <= int(base_info.get("updateGoodsHave"))]:
+            tmp = self.myreq(urls.get("upgrade") % weapon.get("baseId"))
+            if tmp.get("result") != "0":
+                return
+
+    # 仙化技能
+    def doppelganger_skill(self):
+        from operator import itemgetter
+        urls = dict()
+        urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=doppelganger&subtype=%s&op=3"
+        urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=doppelganger&id=%s&op=8"
+        base_info = self.myreq(urls.get("get_base_info") % "4")
+        if base_info.get("result") != "0":
+            return
+        for i in range(5, 7):
+            tmp = self.myreq(urls.get("get_base_info") % str(i))
+            if tmp.get("result") != "0":
+                return
+            for t in tmp.get("weapon"):
+                base_info["weapon"].append(t)
+        for t in base_info.get("weapon"):
+            t["need_goods_num"] = int(t.get("updateGoodsNum"))
+        base_info.get("weapon").sort(key=itemgetter("need_goods_num"))
+        for weapon in [w for w in base_info.get("weapon") if w.get("successRate") == u"必成" and w.get("need_goods_num") <= int(base_info.get("updateGoodsHave"))]:
+            tmp = self.myreq(urls.get("upgrade") % weapon.get("baseId"))
             if tmp.get("result") != "0":
                 return
