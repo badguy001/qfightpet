@@ -325,6 +325,7 @@ class Daemon(scrapy.Spider):
         self.achievement()
         self.doppelganger_weapon()
         self.doppelganger_skill()
+        self.element()
 
     def closed(self, reason):
         print self.stat
@@ -715,8 +716,8 @@ class Daemon(scrapy.Spider):
                         elif tmp.get("result") == "-1":
                             return  # 不知道什么错误
         # 这里说明还有活力，从高到低打npc，获取无字天书
-        for i in range(20, 1, -1):
-            map_info = self.myreq(urls.get("get_map_info") % b.get("mapid"))
+        for i in range(20, 0, -1):
+            map_info = self.myreq(urls.get("get_map_info") % str(i))
             if map_info.get("result") != "0":
                 continue
             for npc in reversed(map_info.get("monster_infos_")):
@@ -771,7 +772,8 @@ class Daemon(scrapy.Spider):
                 for x in [y for y in tmp.get("array") if y.get("id") == n.get("id")]:
                     n["savvy"] = x.get("savvy")
         # 卓越和悟性10的可以加经验
-        for n in [m for m in base_info.get("array") if m.get("savvy") == "10" and m.get("quality") == "3" and int(m.get("lvl")) < 20]:
+        for n in [m for m in base_info.get("array") if
+                  m.get("savvy") == "10" and m.get("quality") == "3" and int(m.get("lvl")) < 20]:
             if int(base_info.get("yueli")) > 1000 and int(n.get("lvl")) < 20:
                 tmp = self.myreq(urls.get("upgrade_level"))
                 base_info["yueli"] = tmp.get("yueli", "0")
@@ -789,7 +791,8 @@ class Daemon(scrapy.Spider):
         base_info = self.myreq(urls.get("get_base_info"))
         if base_info.get("result", "-1") != "0":
             return
-        for weapon in [w for w in base_info.get("infos") if w.get("owned_weapon_id") != "0" and w.get("awaken_level") != "10"]:
+        for weapon in [w for w in base_info.get("infos") if
+                       w.get("owned_weapon_id") != "0" and w.get("awaken_level") != "10"]:
             consume_goods_num = int(weapon.get("consume_goods_num"))
             consume_goods_owned_num = int(weapon.get("consume_goods_owned_num"))
             bless = int(weapon.get("bless"))
@@ -821,7 +824,8 @@ class Daemon(scrapy.Spider):
         from operator import itemgetter
         urls = dict()
         urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=achievement"
-        urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=achievement&achievement_id=%s&times=%s&op=upgradelevel"
+        urls[
+            "upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=achievement&achievement_id=%s&times=%s&op=upgradelevel"
         base_info = self.myreq(urls.get("get_base_info"))
         if base_info.get("result") != "0":
             return
@@ -849,7 +853,9 @@ class Daemon(scrapy.Spider):
         for t in base_info.get("weapon"):
             t["need_goods_num"] = int(t.get("updateGoodsNum"))
         base_info.get("weapon").sort(key=itemgetter("need_goods_num"))
-        for weapon in [w for w in base_info.get("weapon") if w.get("successRate") == u"必成" and w.get("need_goods_num") <= int(base_info.get("updateGoodsHave"))]:
+        for weapon in [w for w in base_info.get("weapon") if
+                       w.get("successRate") == u"必成" and w.get("need_goods_num") <= int(
+                           base_info.get("updateGoodsHave"))]:
             tmp = self.myreq(urls.get("upgrade") % weapon.get("baseId"))
             if tmp.get("result") != "0":
                 return
@@ -867,12 +873,62 @@ class Daemon(scrapy.Spider):
             tmp = self.myreq(urls.get("get_base_info") % str(i))
             if tmp.get("result") != "0":
                 return
-            for t in tmp.get("weapon"):
-                base_info["weapon"].append(t)
-        for t in base_info.get("weapon"):
+            for t in tmp.get("skill"):
+                base_info["skill"].append(t)
+        for t in base_info.get("skill"):
             t["need_goods_num"] = int(t.get("updateGoodsNum"))
-        base_info.get("weapon").sort(key=itemgetter("need_goods_num"))
-        for weapon in [w for w in base_info.get("weapon") if w.get("successRate") == u"必成" and w.get("need_goods_num") <= int(base_info.get("updateGoodsHave"))]:
+        base_info.get("skill").sort(key=itemgetter("need_goods_num"))
+        for weapon in [w for w in base_info.get("skill") if
+                       w.get("successRate") == u"必成" and w.get("need_goods_num") <= int(
+                           base_info.get("updateGoodsHave"))]:
             tmp = self.myreq(urls.get("upgrade") % weapon.get("baseId"))
             if tmp.get("result") != "0":
                 return
+    # 五行升级
+    def element(self):
+        from operator import itemgetter
+        import math
+        urls = dict()
+        urls["get_element_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=element&subtype=0"
+        urls["get_element_detail"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=element&elementId=%s&subtype=1"
+        urls["upgrade_element"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=element&elementId=%s&stoneNum=%s&subtype=2"
+        urls["get_stone_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=element&subtype=3"
+        urls["upgrade_stone"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=element&stoneId=%s&upTimes=%s&subtype=4"
+        element_info = self.myreq(urls.get("get_element_info"))
+        if element_info.get("result") != "0" or len(element_info.get("picInfo")) == 0:
+            return
+        # 拿出等级最小的那个来升级
+        for e in element_info.get("picInfo"):
+            e["mylevel"] = int(e.get("eLevel"))
+        element_info.get("picInfo").sort(key=itemgetter("mylevel", "eId"))
+        element = self.myreq(urls.get("get_element_detail") % element_info.get("picInfo")[0].get("eId"))
+        if element.get("result") != "0":
+            return
+        need_radio = 850  # 成功概率至少要达到85%
+        # 计算需要多少个石头才能达到规定的概率
+        need_stone_num = int(math.ceil((need_radio - int(element.get("upRadio"))) / int(element.get("stoneRadio"))))
+        # 当需要的石头名称
+        need_stone_name = element.get("stone")
+        while int(element.get("achievment")) >= int(element.get("needAchievment")) and \
+                need_stone_num <= int(element.get("stoneNum")) and \
+                need_stone_name == element.get("stone"):
+            tmp = self.myreq(urls.get("upgrade_element") % (element.get("eId"), str(need_stone_num)))
+            if tmp.get("result") != "0":
+                break
+            element = self.myreq(urls.get("get_element_detail") % element.get("eId"))
+            need_stone_num = int(math.ceil((need_radio - int(element.get("upRadio"))) / int(element.get("stoneRadio"))))
+        # 升级石头
+        stone_info = self.myreq(urls.get("get_stone_info"))
+        if stone_info.get("result") != "0":
+            return
+        for stone in stone_info.get("stoneList"):
+            if stone.get("stoneName") == need_stone_name:
+                stone_id = stone.get("stoneId")
+        for stone in stone_info.get("stoneList"):
+            if stone.get("stoneId") > stone_id:
+                continue
+            upgrade_num = int(min(int(stone.get("ownUpNeedNum")) / int(stone.get("upNeedNum")),
+                              int(stone_info.get("achievment")) / int(stone.get("upNeedAcievement"))))
+            if upgrade_num > 0:
+                tmp = self.myreq(urls.get("upgrade_stone") % (stone.get("stoneId"), upgrade_num))
+                break   # 只升级一次石头
