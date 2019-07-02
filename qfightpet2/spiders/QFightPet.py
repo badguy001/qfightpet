@@ -841,10 +841,10 @@ class Daemon(scrapy.Spider):
         urls = dict()
         urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=doppelganger&subtype=%s&op=2"
         urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=doppelganger&id=%s&op=7"
-        base_info = self.myreq(urls.get("get_base_info") % "1")
+        base_info = self.myreq(urls.get("get_base_info") % "0")
         if base_info.get("result") != "0":
             return
-        for i in range(2, 5):
+        for i in range(1, 4):
             tmp = self.myreq(urls.get("get_base_info") % str(i))
             if tmp.get("result") != "0":
                 return
