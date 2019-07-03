@@ -8,6 +8,8 @@ import time
 import random
 from urllib import urlencode
 import requests
+from operator import itemgetter
+import math
 
 
 class Daemon(scrapy.Spider):
@@ -34,6 +36,8 @@ class Daemon(scrapy.Spider):
         "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3108")  # 使用月卡
     start_urls.append(
         "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3112")  # 使用周卡
+    start_urls.append(
+        "https://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=secttournament&op=getrankandrankingreward")  # 门派邀请赛领奖
 
     allowed_domains = ["dld.qzapp.z.qq.com"]
     not_allow_texts = list()
@@ -326,6 +330,7 @@ class Daemon(scrapy.Spider):
         self.doppelganger_weapon()
         self.doppelganger_skill()
         self.element()
+        self.pearl()
 
     def closed(self, reason):
         print self.stat
@@ -596,15 +601,18 @@ class Daemon(scrapy.Spider):
             return
         weapon_list = resp.get("item")
         skill_list = resp.get("item1")
+        # 从低升到高
+        weapon_list.sort(key=itemgetter("num"))
+        skill_list.sort(key=itemgetter("num"))
         for w in weapon_list:
-            if w.get("flag") != "1" or w.get("num") == "0" or int(w.get("num")) <= int(resp.get("gold_scroll_num")) or \
+            if w.get("flag") != "1" or w.get("num") == "0" or int(w.get("num")) > int(resp.get("gold_scroll_num")) or \
                     w.get("percent") != u"必成":
                 continue
             tmp = self.myreq(urls.get("upgrade") % w.get("id"))
             resp["gold_scroll_num"] = str(int(resp.get("gold_scroll_num")) - int(w.get("num")))
             upgrade_num = upgrade_num + 1
         for w in skill_list:
-            if w.get("flag") != "1" or w.get("num") == "0" or int(w.get("num")) <= int(resp.get("gold_scroll_num")) or \
+            if w.get("flag") != "1" or w.get("num") == "0" or int(w.get("num")) > int(resp.get("gold_scroll_num")) or \
                     w.get("percent") != u"必成":
                 continue
             tmp = self.myreq(urls.get("upgrade") % w.get("id"))
@@ -617,7 +625,6 @@ class Daemon(scrapy.Spider):
 
     # 历练
     def mappush(self):
-        from operator import itemgetter
         urls = dict()
         urls["get_map_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=mappush&mapid=%s&type=2"
         urls["fight_npc"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=mappush&npcid=%s&type=1"
@@ -783,7 +790,6 @@ class Daemon(scrapy.Spider):
 
     # 武器觉醒
     def weapon_awaken(self):
-        import math
         urls = dict()
         urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=awaken"
         urls["upgrade_weapon"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=awaken&op=upgrade&base=%s&times=%s"
@@ -821,7 +827,6 @@ class Daemon(scrapy.Spider):
 
     # 徽章升级
     def achievement(self):
-        from operator import itemgetter
         urls = dict()
         urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=achievement"
         urls[
@@ -837,7 +842,6 @@ class Daemon(scrapy.Spider):
 
     # 仙化武器
     def doppelganger_weapon(self):
-        from operator import itemgetter
         urls = dict()
         urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=doppelganger&subtype=%s&op=2"
         urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=doppelganger&id=%s&op=7"
@@ -862,7 +866,6 @@ class Daemon(scrapy.Spider):
 
     # 仙化技能
     def doppelganger_skill(self):
-        from operator import itemgetter
         urls = dict()
         urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=doppelganger&subtype=%s&op=3"
         urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=doppelganger&id=%s&op=8"
@@ -884,10 +887,9 @@ class Daemon(scrapy.Spider):
             tmp = self.myreq(urls.get("upgrade") % weapon.get("baseId"))
             if tmp.get("result") != "0":
                 return
+
     # 五行升级
     def element(self):
-        from operator import itemgetter
-        import math
         urls = dict()
         urls["get_element_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=element&subtype=0"
         urls["get_element_detail"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=element&elementId=%s&subtype=1"
@@ -928,7 +930,88 @@ class Daemon(scrapy.Spider):
             if stone.get("stoneId") > stone_id:
                 continue
             upgrade_num = int(min(int(stone.get("ownUpNeedNum")) / int(stone.get("upNeedNum")),
-                              int(stone_info.get("achievment")) / int(stone.get("upNeedAcievement"))))
+                                  int(stone_info.get("achievment")) / int(stone.get("upNeedAcievement"))))
             if upgrade_num > 0:
                 tmp = self.myreq(urls.get("upgrade_stone") % (stone.get("stoneId"), upgrade_num))
-                break   # 只升级一次石头
+                break  # 只升级一次石头
+
+    def pearl(self):
+        urls = dict()
+        urls["get_upgrade_pearl_detail"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=composepearl&exchangetype=2001"
+        urls["upgrade_pearl_piece"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=composepearl&exchangetype=%s"
+        urls["upgrade_pearl"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=upgradepearls&pearl=%s"
+        urls["get_weapon_pearl_detail"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=viewpearl"
+        urls["upgrade_weapon_pearl"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=inlaypearls&weapon=%s&pearl=%s&pos=%s"
+        upgrade_ids = {"1": "2001",
+                       "2": "2000",
+                       "3": "2004",
+                       "4": "2002",
+                       "5": "2005",
+                       "6": "2003",
+                       "7": "2006"}
+        type_min_id = {"1": "4007",
+                       "2": "4017",
+                       "3": "4027",
+                       "4": "4037",
+                       "5": "4047",
+                       "6": "4057",
+                       "7": "4067"}
+        upgrade_level_need_num = {"1": 3,
+                                  "2": 3,
+                                  "3": 3,
+                                  "4": 6,
+                                  "5": 2,
+                                  "6": 2}
+        pearl_info = self.myreq(urls.get("get_upgrade_pearl_detail"))
+        if pearl_info.get("result") != "0" and pearl_info.get("result") != "-100":
+            return
+        # 升级一次碎片
+        for i in range(1, 8):
+            while True:
+                piece = [p for p in pearl_info.get("piece") if p.get("type") == str(i) and int(p.get("num")) >= 5]
+                if len(piece) == 0:
+                    break
+                pearl_info = self.myreq(urls.get("upgrade_pearl") % upgrade_ids.get(piece.get("type")))
+                if pearl_info.get("result") != "0":
+                    return
+        # 武器
+        weapon_pearl_info = self.myreq(urls.get("get_weapon_pearl_detail"))
+        if weapon_pearl_info.get("result") != "0":
+            return
+        # 升级武器的魂珠
+        for weapon in weapon_pearl_info.get("info"):
+            for pearl in weapon.get("pearl"):
+                if pearl.get("level") == "7" or pearl.get("id") == "0":
+                    continue
+                if type_min_id.get(pearl.get("type")) > pearl.get("id"):
+                    type_min_id[pearl.get("type")] = pearl.get("id")
+                for p in pearl_info.get("info"):
+                    if p.get("id") == str(int(pearl.get("id")) + 1) and int(p.get("num")) > 0:
+                        tmp = self.myreq(
+                            urls.get("upgrade_weapon_pearl") % (
+                            weapon.get("id"), p.get("id"), str(int(pearl.get("pos")) - 1)))
+                        p["num"] = str(int(p.get("num")) - 1)
+                        if tmp.get("result") != "0":
+                            return
+                        else:
+                            break
+        # 升级魂珠
+        for pearl in pearl_info.get("info"):
+            while True:
+                if pearl.get("id") > type_min_id.get(pearl.get("type")) or \
+                        int(pearl.get("num")) < upgrade_level_need_num.get(pearl.get("level")):
+                    break  # 数量不够，或者还不能升级
+                tmp = self.myreq(urls.get("upgrade_pearl") % pearl.get("id"))
+                pearl["num"] = str(int(pearl.get("num")) - upgrade_level_need_num.get(pearl.get("level")))
+                if tmp.get("result") != "0":
+                    return
+
+    # 经脉
+    def intfmerid(self):
+        urls = dict()
+        urls["get_xiangjie_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=intfmerid"
+        urls["get_chuangong_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=intfmerid&sub=3"
+        urls["chuangong"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=intfmerid&master=9004&sub=4"
+        urls["zhuru"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=intfmerid&sub=8&merid=%s&id=%s&idx=%s&cult=%s"
+        urls["shiqu"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=intfmerid&sub=7"
+        urls["hecheng"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=intfmerid&sub=2"
