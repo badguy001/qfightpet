@@ -8,12 +8,13 @@ import urlparse
 import json
 
 options = Options()
-#options.add_argument('--headless')
+options.add_argument('--headless')
 # options.add_argument('--user-data-dir=D:\\user_data')
-options.add_argument('--window-size=1366,768')
+#options.add_argument('--window-size=1366,768')
 options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36')
 
 options.add_argument('--no-sandbox')
+init_browser_flag = False
 
 # 查看是否已经登录，没有登录的话在生成login.png进行扫码登录
 def login(username, password):
@@ -61,11 +62,18 @@ def getusers(filename):
     return tmp
 
 def browser_close():
+    global init_browser_flag
+    if not init_browser_flag:
+        return
     browser.close()
     browser.quit()
 
 def open_browser():
     global browser
+    global init_browser_flag
+    if init_browser_flag:
+        return
+    init_browser_flag = True
     if platform.system() == 'Linux':
         exec_path = './chromedriver'
     else:
@@ -73,14 +81,16 @@ def open_browser():
     browser = webdriver.Chrome(executable_path=exec_path, chrome_options=options)
 
 
-open_browser()
+# open_browser()
 u_file = 'users.json'
 us = getusers(u_file)
 for idx, u in enumerate(us.get("users")):
-    if not u.get("is_valid") and login(u.get("yonghu"), u.get("mima")):
-        u["cookies"] = browser.get_cookies()
-        u["is_valid"] = True
-        u["login_date"] = time.strftime("%Y%m%d%H%M%S", time.localtime())
-        time.sleep(10)
+    if not u.get("is_valid"):
+        open_browser()
+        if login(u.get("yonghu"), u.get("mima")):
+            u["cookies"] = browser.get_cookies()
+            u["is_valid"] = True
+            u["login_date"] = time.strftime("%Y%m%d%H%M%S", time.localtime())
+            time.sleep(10)
 savecookies(u_file, us)
 browser_close()

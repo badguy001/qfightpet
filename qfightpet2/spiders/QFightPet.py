@@ -37,7 +37,7 @@ class Daemon(scrapy.Spider):
     start_urls.append(
         "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3112")  # 使用周卡
     start_urls.append(
-        "https://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=secttournament&op=getrankandrankingreward")  # 门派邀请赛领奖
+        "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=secttournament&op=getrankandrankingreward")  # 门派邀请赛领奖
 
     allowed_domains = ["dld.qzapp.z.qq.com"]
     not_allow_texts = list()
@@ -201,6 +201,7 @@ class Daemon(scrapy.Spider):
                 continue
             url = url[0]
             follow = True
+            url = urlparse.urljoin(response.url, url)
             url_parameters = urlparse.parse_qs(urlparse.urlparse(url).query)
             for not_allow_url_parameter in self.not_allow_url_parameters:
                 if len(not_allow_url_parameter) > 0 and all((k in url_parameters and v in url_parameters[k]) for k, v in
@@ -331,6 +332,7 @@ class Daemon(scrapy.Spider):
         self.doppelganger_skill()
         self.element()
         self.pearl()
+        self.intfmerid()
 
     def closed(self, reason):
         print self.stat
@@ -450,6 +452,7 @@ class Daemon(scrapy.Spider):
     def parse_vip(self, response):
         for form_selector in response.xpath("//form"):
             url = self.get_form_url(form_selector)
+            url = urlparse.urljoin(response.url, url)
             yield scrapy.Request(url=url, callback=self.parse_vip)
 
     def myreq(self, url):
@@ -602,13 +605,17 @@ class Daemon(scrapy.Spider):
         weapon_list = resp.get("item")
         skill_list = resp.get("item1")
         # 从低升到高
-        weapon_list.sort(key=itemgetter("num"))
-        skill_list.sort(key=itemgetter("num"))
+        for w in weapon_list:
+            w["mynum"] = int(w.get("num"))
+        for w in skill_list:
+            w["mynum"] = int(w.get("num"))
+        weapon_list.sort(key=itemgetter("mynum"))
+        skill_list.sort(key=itemgetter("mynum"))
         for w in weapon_list:
             if w.get("flag") != "1" or w.get("num") == "0" or int(w.get("num")) > int(resp.get("gold_scroll_num")) or \
                     w.get("percent") != u"必成":
                 continue
-            tmp = self.myreq(urls.get("upgrade") % w.get("id"))
+            tmp = self.myreq(urls.get("upgrade") % w.get("picid"))
             resp["gold_scroll_num"] = str(int(resp.get("gold_scroll_num")) - int(w.get("num")))
             upgrade_num = upgrade_num + 1
         for w in skill_list:
@@ -961,7 +968,8 @@ class Daemon(scrapy.Spider):
                                   "3": 3,
                                   "4": 6,
                                   "5": 2,
-                                  "6": 2}
+                                  "6": 2,
+                                  "7": 10000000}
         pearl_info = self.myreq(urls.get("get_upgrade_pearl_detail"))
         if pearl_info.get("result") != "0" and pearl_info.get("result") != "-100":
             return
@@ -998,7 +1006,7 @@ class Daemon(scrapy.Spider):
         # 升级魂珠
         for pearl in pearl_info.get("info"):
             while True:
-                if pearl.get("id") > type_min_id.get(pearl.get("type")) or \
+                if int(pearl.get("id")) > int(type_min_id.get(pearl.get("type"))) or \
                         int(pearl.get("num")) < upgrade_level_need_num.get(pearl.get("level")):
                     break  # 数量不够，或者还不能升级
                 tmp = self.myreq(urls.get("upgrade_pearl") % pearl.get("id"))
@@ -1015,3 +1023,71 @@ class Daemon(scrapy.Spider):
         urls["zhuru"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=intfmerid&sub=8&merid=%s&id=%s&idx=%s&cult=%s"
         urls["shiqu"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=intfmerid&sub=7"
         urls["hecheng"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=intfmerid&sub=2"
+        chuangong_info = self.myreq(urls.get("get_chuangong_info"))
+        if chuangong_info.get("result") != "0":
+            return
+        # 传功
+        if chuangong_info.get("master") == "9004" and int(chuangong_info.get("cgf")) > 7:
+            for i in range(1, 20):
+                tmp = self.myreq(urls.get("chuangong"))
+                if tmp.get("result") != "0" or tmp.get("next_master") != "9004":
+                    break
+        chuangong_info = self.myreq(urls.get("get_chuangong_info"))
+        if chuangong_info.get("result") != "0" or len(chuangong_info.get("intf_array")) == 0:
+            return
+        xiangjie_info = self.myreq(urls.get("get_xiangjie_info"))
+        if xiangjie_info.get("result") != "0":
+            return
+        if len(xiangjie_info.get("intf_array")) < int(xiangjie_info.get("slot_num")):
+            # 还有空位拾取一次
+            tmp = self.myreq(urls.get("shiqu"))
+        while True:
+            xiangjie_info = self.myreq(urls.get("get_xiangjie_info"))
+            if xiangjie_info.get("result") != "0":
+                return
+            # 找出升级需要点数最少的那个
+            min_cult = {"id": "1", "need_cult": 1000000}
+            for ini in xiangjie_info.get("merid_array"):
+                if ini.get("intfid") == "0":
+                    continue
+                if int(ini.get("max_cult")) - int(ini.get("cur_cult")) < min_cult.get("need_cult"):
+                    min_cult = ini
+                    min_cult["need_cult"] = int(ini.get("max_cult")) - int(ini.get("cur_cult"))
+            have_num = len(xiangjie_info.get("intf_array"))
+            zhuru_num = 0
+            for idx, ini in enumerate(xiangjie_info.get("intf_array")):
+                # 先判断下这个筋脉有没有注入，没有的话则找个空位注入
+                if not any(i.get("intfid") == ini.get("intfid") for i in xiangjie_info.get("merid_array")):
+                    empty = [x for x in xiangjie_info.get("merid_array") if x.get("intfid") == "0" and x.get("intf_type") == ini.get("intf_type")]
+                    if len(empty) > 0:
+                        empty = empty[0]
+                        tmp = self.myreq(urls.get("zhuru") % (empty.get("id"), ini.get("intfid"), str(idx - zhuru_num), ini.get("cur_cult")))
+                        zhuru_num = zhuru_num + 1
+                        if tmp.get("result") != "0":
+                            return
+                        continue
+                # 再看有没有等级已经注入了，但等级比这个小的
+                low_same = [i for i in xiangjie_info.get("merid_array") if i.get("intfid") == ini.get("intfid") and int(i.get("cur_cult")) < int(ini.get("cur_cult"))]
+                if len(low_same) > 0:
+                    low_same = low_same[0]
+                    tmp = self.myreq(urls.get("zhuru") % (low_same.get("id"), ini.get("intfid"), str(idx - zhuru_num), ini.get("cur_cult")))
+                    zhuru_num = zhuru_num + 1
+                    if tmp.get("result") != "0":
+                        return
+                    continue
+                # 注入
+                if int(ini.get("cur_cult")) <= int(min_cult.get("cur_cult")):
+                    tmp = self.myreq(urls.get("zhuru") % (min_cult.get("id"), ini.get("intfid"), str(idx - zhuru_num), ini.get("cur_cult")))
+                    zhuru_num = zhuru_num + 1
+                    if tmp.get("result") != "0":
+                        return
+                    continue
+            # 还有多余的全部合并
+            if have_num - zhuru_num > 1:
+                tmp = self.myreq(urls.get("hecheng"))
+                if tmp.get("result") != "0":
+                    return
+            # 拾取不到了就退出
+            tmp = self.myreq(urls.get("shiqu"))
+            if tmp.get("result") != "0":
+                break
