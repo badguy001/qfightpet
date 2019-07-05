@@ -333,6 +333,7 @@ class Daemon(scrapy.Spider):
         self.element()
         self.pearl()
         self.intfmerid()
+        self.formation()
 
     def closed(self, reason):
         print self.stat
@@ -625,10 +626,6 @@ class Daemon(scrapy.Spider):
             tmp = self.myreq(urls.get("upgrade") % w.get("id"))
             resp["gold_scroll_num"] = str(int(resp.get("gold_scroll_num")) - int(w.get("num")))
             upgrade_num = upgrade_num + 1
-        if upgrade_num == 0:
-            return
-        else:
-            self.upgrade_weapon_or_skill()
 
     # 历练
     def mappush(self):
@@ -979,7 +976,7 @@ class Daemon(scrapy.Spider):
                 piece = [p for p in pearl_info.get("piece") if p.get("type") == str(i) and int(p.get("num")) >= 5]
                 if len(piece) == 0:
                     break
-                pearl_info = self.myreq(urls.get("upgrade_pearl") % upgrade_ids.get(piece.get("type")))
+                pearl_info = self.myreq(urls.get("upgrade_pearl") % upgrade_ids.get(str(i)))
                 if pearl_info.get("result") != "0":
                     return
         # 武器
@@ -997,7 +994,7 @@ class Daemon(scrapy.Spider):
                     if p.get("id") == str(int(pearl.get("id")) + 1) and int(p.get("num")) > 0:
                         tmp = self.myreq(
                             urls.get("upgrade_weapon_pearl") % (
-                            weapon.get("id"), p.get("id"), str(int(pearl.get("pos")) - 1)))
+                                weapon.get("id"), p.get("id"), str(int(pearl.get("pos")) - 1)))
                         p["num"] = str(int(p.get("num")) - 1)
                         if tmp.get("result") != "0":
                             return
@@ -1058,26 +1055,31 @@ class Daemon(scrapy.Spider):
             for idx, ini in enumerate(xiangjie_info.get("intf_array")):
                 # 先判断下这个筋脉有没有注入，没有的话则找个空位注入
                 if not any(i.get("intfid") == ini.get("intfid") for i in xiangjie_info.get("merid_array")):
-                    empty = [x for x in xiangjie_info.get("merid_array") if x.get("intfid") == "0" and x.get("intf_type") == ini.get("intf_type")]
+                    empty = [x for x in xiangjie_info.get("merid_array") if
+                             x.get("intfid") == "0" and x.get("intf_type") == ini.get("intf_type")]
                     if len(empty) > 0:
                         empty = empty[0]
-                        tmp = self.myreq(urls.get("zhuru") % (empty.get("id"), ini.get("intfid"), str(idx - zhuru_num), ini.get("cur_cult")))
+                        tmp = self.myreq(urls.get("zhuru") % (
+                            empty.get("id"), ini.get("intfid"), str(idx - zhuru_num), ini.get("cur_cult")))
                         zhuru_num = zhuru_num + 1
                         if tmp.get("result") != "0":
                             return
                         continue
                 # 再看有没有等级已经注入了，但等级比这个小的
-                low_same = [i for i in xiangjie_info.get("merid_array") if i.get("intfid") == ini.get("intfid") and int(i.get("cur_cult")) < int(ini.get("cur_cult"))]
+                low_same = [i for i in xiangjie_info.get("merid_array") if
+                            i.get("intfid") == ini.get("intfid") and int(i.get("cur_cult")) < int(ini.get("cur_cult"))]
                 if len(low_same) > 0:
                     low_same = low_same[0]
-                    tmp = self.myreq(urls.get("zhuru") % (low_same.get("id"), ini.get("intfid"), str(idx - zhuru_num), ini.get("cur_cult")))
+                    tmp = self.myreq(urls.get("zhuru") % (
+                        low_same.get("id"), ini.get("intfid"), str(idx - zhuru_num), ini.get("cur_cult")))
                     zhuru_num = zhuru_num + 1
                     if tmp.get("result") != "0":
                         return
                     continue
                 # 注入
                 if int(ini.get("cur_cult")) <= int(min_cult.get("cur_cult")):
-                    tmp = self.myreq(urls.get("zhuru") % (min_cult.get("id"), ini.get("intfid"), str(idx - zhuru_num), ini.get("cur_cult")))
+                    tmp = self.myreq(urls.get("zhuru") % (
+                        min_cult.get("id"), ini.get("intfid"), str(idx - zhuru_num), ini.get("cur_cult")))
                     zhuru_num = zhuru_num + 1
                     if tmp.get("result") != "0":
                         return
@@ -1091,3 +1093,91 @@ class Daemon(scrapy.Spider):
             tmp = self.myreq(urls.get("shiqu"))
             if tmp.get("result") != "0":
                 break
+
+    # 天书助阵
+    def formation(self):
+        urls = dict()
+        urls[
+            "get_formation_detail"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=formation&index=%s&type=1&formationtype=1"
+        urls[
+            "active_formation"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=formation&index=%s&type=2&formationtype=1&attrindex=%s&formationid=%s"
+        urls[
+            "upgrade_formation"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=formation&formationtype=1&attrindex=%s&times=%s&index=%s&type=3&formationid=%s"
+        consume_yueli_num = 40  # 升级一次消耗阅历
+        consume_tianshu_num = 1  # 升级一次消耗天数
+        get_exp_upgrade_one_time = 30  # 升级一次获得的经验
+        active_consume_yueli_num = 200  # 激活需要消耗的阅历
+        formation_info = self.myreq(urls.get("get_formation_detail") % "0")
+        if formation_info.get("result") != "0" or formation_info.get("in_act_time") != "1" or formation_info.get(
+                "isactivity") != "1":
+            return
+        # 先统一升级到5级
+        for idx, f in enumerate(formation_info.get("formation")):
+            if f.get("lock") != "1":
+                continue
+            formation = self.myreq(urls.get("get_formation_detail") % str(idx))
+            if formation.get("result") != "0":
+                return
+            if any(int(ff.get("curpower")) < int(ff.get("power")) for ff in formation.get("mercenary")):
+                continue  # 没有达到战力要求
+            aidx = 0
+            while aidx < len(formation.get("attrinfo")):
+                attr = formation.get("attrinfo")[aidx]
+                if attr.get("level") == "0":
+                    # 先激活
+                    tmp = self.myreq(urls.get("active_formation") % (str(idx), str(aidx), f.get("id")))
+                    if tmp.get("result") != "0":
+                        return
+                    formation = tmp
+                    continue
+                if int(attr.get("level")) >= 5:
+                    aidx = aidx + 1
+                    continue  # 大于5级了就跳过
+                upgrade_need_time = int(math.ceil(
+                    (float(attr.get("exp")) - float(attr.get("curexp"))) / get_exp_upgrade_one_time))
+                upgrade_time = min(int(float(formation.get("consumeitemnum")) / consume_tianshu_num),
+                                   int(float(formation.get("yueli")) / consume_yueli_num), upgrade_need_time)
+                if upgrade_time == 0:
+                    return  # 没有天数或者阅历了
+                tmp = self.myreq(
+                    urls.get("upgrade_formation") % (str(aidx), str(upgrade_time), str(idx), f.get("id")))
+                if tmp.get("result") != "0":
+                    return
+                formation = tmp
+        # 所有已激活的都到了5级了，再逐个升级
+        formation_info = self.myreq(urls.get("get_formation_detail") % "0")
+        if formation_info.get("result") != "0" or formation_info.get("in_act_time") != "1" or formation_info.get(
+                "isactivity") != "1":
+            return
+        for aidx, attr in enumerate(formation_info.get("attrinfo")):
+            attr["aidx"] = aidx
+            attr["idx"] = 0
+            attr["id"] = formation_info.get("formation")[0].get("id")
+            if attr.get("level") == "0" or attr.get("level") == "10":
+                attr["exp"] = "1000000000000000"
+            attr["need_exp"] = int(attr.get("exp")) - int(attr.get("curexp"))
+        for idx in range(1, len(formation_info.get("formation"))):
+            tmp = self.myreq(urls.get("get_formation_detail") % "0")
+            if tmp.get("result") != "0":
+                return
+            for aidx, attr in enumerate(tmp.get("attrinfo")):
+                attr["aidx"] = aidx
+                attr["idx"] = idx
+                attr["id"] = formation_info.get("formation")[idx].get("id")
+                if attr.get("level") == "0" or attr.get("level") == "10":
+                    attr["exp"] = "1000000000000000"
+                attr["need_exp"] = int(attr.get("exp")) - int(attr.get("curexp"))
+            formation_info.get("attrinfo").extend(tmp.get("attrinfo"))
+        # 排序找出升级需要经验最少的一个
+        formation_info.get("attrinfo").sort(key=itemgetter("need_exp"))
+        attr = formation_info.get("attrinfo")[0]
+        if attr.get("level") == "10":
+            return
+        upgrade_need_time = math.ceil(
+            (int(attr.get("exp")) - int(attr.get("curexp"))) / get_exp_upgrade_one_time)
+        upgrade_time = min(int(int(formation_info.get("consumeitemnum")) / consume_tianshu_num),
+                           int(int(formation_info.get("yueli")) / consume_yueli_num), upgrade_need_time)
+        if upgrade_time == 0:
+            return  # 没有天数或者阅历了
+        tmp = self.myreq(
+            urls.get("upgrade_formation") % (str(attr.get("aidx")), str(upgrade_time), str(attr.get("idx")), attr.get("id")))
