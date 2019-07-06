@@ -586,7 +586,11 @@ class Daemon(scrapy.Spider):
         for g in self.mypackage:
             if g.get("canuse") != "1":
                 continue
-            if not (g.get("name").endswith(u"信物") or g.get("name").endswith(u"宝箱") or g.get("name").endswith(u"锦囊")):
+            if not (g.get("name").endswith(u"信物") or g.get("name").endswith(u"宝箱") or \
+                    g.get("name").endswith(u"锦囊") or g.get("name").find(u"经验") != -1 or \
+                    g.get("name").find(u"阅历") != -1 or g.get("name").find(u"叉烧包") != -1 or \
+                    g.get("name").find(u"礼盒") != -1 or g.get("name").find(u"巅峰") != -1 or \
+                    g.get("name").find(u"内丹") != -1 or g.get("name").find(u"生命洗刷刷") != -1):
                 continue
             tmp = self.myreq(url % (self.myqq, g.get("id")))
             while tmp.get("result") == "0":
@@ -976,7 +980,7 @@ class Daemon(scrapy.Spider):
                 piece = [p for p in pearl_info.get("piece") if p.get("type") == str(i) and int(p.get("num")) >= 5]
                 if len(piece) == 0:
                     break
-                pearl_info = self.myreq(urls.get("upgrade_pearl") % upgrade_ids.get(str(i)))
+                pearl_info = self.myreq(urls.get("upgrade_pearl_piece") % upgrade_ids.get(str(i)))
                 if pearl_info.get("result") != "0":
                     return
         # 武器
@@ -1137,7 +1141,7 @@ class Daemon(scrapy.Spider):
                     (float(attr.get("exp")) - float(attr.get("curexp"))) / get_exp_upgrade_one_time))
                 upgrade_time = min(int(float(formation.get("consumeitemnum")) / consume_tianshu_num),
                                    int(float(formation.get("yueli")) / consume_yueli_num), upgrade_need_time)
-                if upgrade_time == 0:
+                if upgrade_time == 0 or upgrade_need_time != upgrade_time:
                     return  # 没有天数或者阅历了
                 tmp = self.myreq(
                     urls.get("upgrade_formation") % (str(aidx), str(upgrade_time), str(idx), f.get("id")))
@@ -1177,7 +1181,7 @@ class Daemon(scrapy.Spider):
             (int(attr.get("exp")) - int(attr.get("curexp"))) / get_exp_upgrade_one_time)
         upgrade_time = min(int(int(formation_info.get("consumeitemnum")) / consume_tianshu_num),
                            int(int(formation_info.get("yueli")) / consume_yueli_num), upgrade_need_time)
-        if upgrade_time == 0:
+        if upgrade_time == 0 or upgrade_need_time != upgrade_time:
             return  # 没有天数或者阅历了
         tmp = self.myreq(
             urls.get("upgrade_formation") % (str(attr.get("aidx")), str(upgrade_time), str(attr.get("idx")), attr.get("id")))
