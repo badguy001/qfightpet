@@ -38,6 +38,8 @@ class Daemon(scrapy.Spider):
         "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3112")  # 使用周卡
     start_urls.append(
         "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=secttournament&op=getrankandrankingreward")  # 门派邀请赛领奖
+    start_urls.append(
+        "https://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=newAct&op=exchange&subtype=52&type=1223&times=1")  # 登录活动兑换黄金卷轴
 
     allowed_domains = ["dld.qzapp.z.qq.com"]
     not_allow_texts = list()
@@ -334,6 +336,8 @@ class Daemon(scrapy.Spider):
         self.pearl()
         self.intfmerid()
         self.formation()
+        self.inscription()
+        self.astrolabe()
 
     def closed(self, reason):
         print self.stat
@@ -458,10 +462,10 @@ class Daemon(scrapy.Spider):
 
     def myreq(self, url):
         headers = {
-            'user-agent': "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36",
-            "Accept": "text / html, application / xhtml + xml, application / xml;q = 0.9, image / webp, image / apng, * / *;q = 0.8, application / signed - exchange;v = b3",
-            "Accept - Encoding": "gzip, deflate",
-            "Accept - Language": "zh - CN, zh;q = 0.9"
+            'User-Agent': "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36",
+            "Accept-Encoding": "gzip, deflate",
+            "Accept-Language": "zh - CN, zh;q = 0.9",
+            "Referer": "http://fight.pet.qq.com/"
         }
         resp = requests.get(url, headers=headers, cookies=self.cookies)
         try:
@@ -1141,8 +1145,11 @@ class Daemon(scrapy.Spider):
                     (float(attr.get("exp")) - float(attr.get("curexp"))) / get_exp_upgrade_one_time))
                 upgrade_time = min(int(float(formation.get("consumeitemnum")) / consume_tianshu_num),
                                    int(float(formation.get("yueli")) / consume_yueli_num), upgrade_need_time)
-                if upgrade_time == 0 or upgrade_need_time != upgrade_time:
+                if upgrade_time == 0:
                     return  # 没有天数或者阅历了
+                elif upgrade_need_time != upgrade_time:
+                    aidx = aidx + 1
+                    continue
                 tmp = self.myreq(
                     urls.get("upgrade_formation") % (str(aidx), str(upgrade_time), str(idx), f.get("id")))
                 if tmp.get("result") != "0":
@@ -1184,4 +1191,297 @@ class Daemon(scrapy.Spider):
         if upgrade_time == 0 or upgrade_need_time != upgrade_time:
             return  # 没有天数或者阅历了
         tmp = self.myreq(
-            urls.get("upgrade_formation") % (str(attr.get("aidx")), str(upgrade_time), str(attr.get("idx")), attr.get("id")))
+            urls.get("upgrade_formation") % (
+                str(attr.get("aidx")), str(upgrade_time), str(attr.get("idx")), attr.get("id")))
+
+    def inscription(self):
+        urls = dict()
+        urls[
+            "get_detail"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=inscription&type_id=%s&attr_id=%s&subtype=0&weapon_idx=%s"
+        urls[
+            "active"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=inscription&type_id=%s&attr_id=%s&subtype=1&weapon_idx=%s"
+        urls[
+            "upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=inscription&type_id=%s&attr_id=%s&subtype=2&times=%s&weapon_idx=%s"
+        urls["get_exchange_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&subtype=14"
+        urls["exchange"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&subtype=2&type=%s&times=%s"
+        urls["get_active_list"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=view&kind=5&selfuin=%s"
+        tmp = self.myreq(urls.get("get_active_list") % self.myqq)
+        if tmp.get("result") != "0":
+            return
+        if all(u"铭刻" != active.get("name") for active in tmp.get("act_array")):
+            get_bless_when_fail = 2  # 不再活动时间范围内
+            return
+        else:
+            get_bless_when_fail = 4
+        exchange_info = self.myreq(urls.get("get_exchange_info"))
+        if exchange_info.get("result") != "0":
+            return
+        can_exchange_num = dict()
+        for exc in exchange_info.get("items"):
+            e = dict()
+            e["name"] = exc.get("name")
+            e["id"] = exc.get("type")
+            e["can_exchange_num"] = int(
+                int(exchange_info.get("values").get(exc.get("needs_id"))) / int(exc.get("needs_num"))) * int(
+                exc.get("num"))
+            can_exchange_num[e.get("name")] = e
+        # 将所有的属性构建成字典，如果有可以激活的，将在构建过程中直接激活
+        max_type_id = 100
+        type_id = 0
+        goods_list = dict()
+        attr_list = list()
+        while type_id <= max_type_id:
+            max_weapon_idx = 100
+            weapon_idx = 0
+            while weapon_idx <= max_weapon_idx:
+                max_attr_idx = 100
+                attr_idx = 0
+                while attr_idx <= max_attr_idx:
+                    tmp = self.myreq(urls.get("get_detail") % (str(type_id), str(attr_idx), str(weapon_idx)))
+                    if tmp.get("result") != "0":
+                        return
+                    attr = dict()
+                    attr["attr_idx"] = str(attr_idx)
+                    attr["type_id"] = str(type_id)
+                    attr["weapon_idx"] = str(weapon_idx)
+                    attr["goods_name"] = tmp.get("goods_name")
+                    attr["goods_consume"] = tmp.get("goods_consume")
+                    attr["bless"] = tmp.get("bless")
+                    attr["bless_limit"] = tmp.get("bless_limit")
+                    attr["upgrade_need_bless"] = int(tmp.get("bless_limit")) - int(tmp.get("bless"))
+                    attr["require_weapon_level"] = tmp.get("attr_list")[attr_idx].get("require")
+                    attr["level"] = tmp.get("attr_list")[attr_idx].get("level")
+                    attr["name"] = tmp.get("attr_list")[attr_idx].get("name")
+                    attr["skill_name"] = tmp.get("skill_name")
+                    attr["weapon_name"] = tmp.get("weapon_list")[weapon_idx].get("weapon_name")
+                    attr["weapon_level"] = tmp.get("weapon_list")[weapon_idx].get("level")
+                    if attr["weapon_level"] == "-1":
+                        break  # 没有该武器，跳过
+                    if attr["level"] == "-1" and attr["require_weapon_level"] <= attr["weapon_level"]:
+                        # 需要激活
+                        tmp = self.myreq(urls.get("active") % (str(type_id), str(attr_idx), str(weapon_idx)))
+                        if tmp.get("result") != "0":
+                            return
+                        continue
+                    if attr["level"] == "-1" and attr["require_weapon_level"] > attr["weapon_level"]:
+                        break  # 无法激活及之后的属性
+                    attr_list.append(attr)
+                    goods_list[attr.get("goods_name")] = int(tmp.get("goods_have"))
+                    if attr_idx == 0:
+                        max_attr_idx = len(tmp.get("attr_list")) - 1
+                    attr_idx = attr_idx + 1
+                if weapon_idx == 0:
+                    max_weapon_idx = len(tmp.get("weapon_list")) - 1
+                weapon_idx = weapon_idx + 1
+            if type_id == 0:
+                max_type_id = len(tmp.get("insc_list")) - 1
+            type_id = type_id + 1
+        # 排序
+        attr_list.sort(key=itemgetter("upgrade_need_bless"))
+        for attr in attr_list:
+            need_upgrade_time = int(math.ceil(float(attr.get("upgrade_need_bless")) / float(get_bless_when_fail))) + 1
+            can_upgrade_time = int(goods_list.get(attr.get("goods_name")) / int(attr.get("goods_consume")))
+            if can_upgrade_time < need_upgrade_time and (need_upgrade_time - can_upgrade_time) * int(
+                    attr.get("goods_consume")) > can_exchange_num.get(attr.get("goods_name")).get("can_exchange_num"):
+                continue
+            for i in range(0, (need_upgrade_time - can_upgrade_time) * int(attr.get("goods_consume"))):
+                tmp = self.myreq(urls.get("exchange") % (can_exchange_num.get(
+                    attr.get("goods_name")).get("id"), "1"))
+                if tmp.get("result") != "0":
+                    return
+            for i in range(1, need_upgrade_time + 1):
+                tmp = self.myreq(
+                    urls.get("upgrade") % (attr.get("type_id"), attr.get("attr_idx"), "1", attr.get("weapon_idx")))
+                if tmp.get("result") != "0":
+                    return
+                if tmp.get("msg").find(u"失败") != -1:
+                    continue
+                return
+
+    # 星盘
+    def astrolabe(self):
+        urls = dict()
+        urls["get_astrolabe_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=astrolabe&op=index"
+        urls["active"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=astrolabe&op=activate&star=%s"
+        urls[
+            "upgrade_directly"] = "https://fight.pet.qq.com/cgi-bin/petpk?cmd=astrolabe&op=upgradeinsocket&star=%s&socket=%s"
+        urls["get_exchange1_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&subtype=13"
+        urls["exchange1"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&type=%s&times=%s&subtype=2"
+        urls["insert"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=astrolabe&op=insert&star=%s&socket=%s&gem=%s"
+        urls["get_exchange2_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=wlmz&op=view_exchange"
+        urls["exchange2"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=wlmz&op=exchange&type_id=%s"
+        urls["get_upgrade_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=astrolabe&op=viewupgrade&gem_type=%s"
+        urls["upgrade"] = "https://fight.pet.qq.com/cgi-bin/petpk?cmd=astrolabe&op=upgrade&gem=%s"
+        exchange_info = self.myreq(urls.get("get_exchange1_info"))
+        if exchange_info.get("result") != "0":
+            return
+        can_exchange_num = dict()
+        for exc in exchange_info.get("items"):
+            e = dict()
+            e["name"] = exc.get("name")
+            e["type"] = exc.get("type")
+            e["id"] = exc.get("id")
+            e["can_exchange_num"] = int(
+                int(exchange_info.get("values").get(exc.get("needs_id"))) / int(exc.get("needs_num"))) * int(
+                exc.get("num"))
+            can_exchange_num[e.get("name")] = e
+        exchange_info = self.myreq(urls.get("get_exchange2_info"))
+        if exchange_info.get("result") != "0":
+            return
+        for exc in exchange_info.get("exchange_goods_info"):
+            e = dict()
+            e["name"] = exc.get("goods_name")
+            e["type"] = exc.get("type_id")
+            e["id"] = exc.get("goods_id")
+            e["can_exchange_num"] = int(int(exchange_info.get("points")) / int(exc.get("need_points"))) * int(
+                exc.get("goods_num"))
+            can_exchange_num[e.get("name")] = e
+        astrolabe_info = self.myreq(urls.get("get_astrolabe_info"))
+        if astrolabe_info.get("result") != "0":
+            return
+        # 激活
+        for star in astrolabe_info.get("stars"):
+            if star.get("activated") != "1":
+                if int(star.get("required_skill_num")) <= int(astrolabe_info.get("skill_num")):
+                    tmp = self.myreq(urls.get("active") % star.get("id"))
+        astrolabe_info = self.myreq(urls.get("get_astrolabe_info"))
+        if astrolabe_info.get("result") != "0":
+            return
+        gems = dict()
+        for i in range(1, 9):
+            upgrade_info = self.myreq(urls.get("get_upgrade_info") % str(i))
+            if upgrade_info.get("result") != "0":
+                return
+            for gem in upgrade_info.get("gems"):
+                gems[gem.get("id")] = gem.get("name")
+        min_gem = dict()
+        # 把空的填上
+        for star in astrolabe_info.get("stars"):
+            if star.get("activated") != "1":
+                continue
+            for idx in range(0, 2):
+                s = star.get("sockets")[idx]
+                if s.get("gem") != "0":
+                    min_gem[gems.get(s.get("gem"))[2:5]] = min(min_gem.get(gems.get(s.get("gem"))[2:5], u"8级"), gems.get(s.get("gem"))[0:2])
+                    continue
+                # 应该填什么石头
+                if star.get("name").startswith(u"天"):
+                    if any(gems.get(ss.get("gem"), "none").endswith(u"玛瑙石") for ss in star.get("sockets")):
+                        gem = u"1级日曜石"
+                    else:
+                        gem = u"1级玛瑙石"
+                else:
+                    if any(gems.get(ss.get("gem"), "none").endswith(u"翡翠石") for ss in star.get("sockets")):
+                        gem = u"1级月光石"
+                    else:
+                        gem = u"1级翡翠石"
+                min_gem[gem[2:5]] = min(min_gem.get(gem[2:5], u"8级"), gem[0:2])
+                # 背包里面有的话直接升级
+                if any(goods.get("name") == gem for goods in self.mypackage):
+                    self.myreq(urls.get("insert") % (star.get("id"), str(idx), can_exchange_num.get(gem).get("id")))
+                    return
+                # 背包没有则兑换
+                if can_exchange_num.get(gem).get("can_exchange_num") >= 1:
+                    self.myreq(urls.get("exchange1") % (can_exchange_num.get(gem).get("type"), "1"))
+                    self.myreq(urls.get("insert") % (star.get("id"), str(idx), can_exchange_num.get(gem).get("id")))
+                    return
+            s = star.get("sockets")[2]
+            if s.get("gem") != "0":
+                min_gem[gems.get(s.get("gem"))[2:5]] = min(min_gem.get(gems.get(s.get("gem"))[2:5], u"8级"), gems.get(s.get("gem"))[0:2])
+                continue
+            # 应该填什么石头
+            if star.get("name").startswith(u"天"):
+                gem = u"1级狂暴石"
+            else:
+                gem = u"1级神愈石"
+            min_gem[gem[2:5]] = min(min_gem.get(gem[2:5], u"8级"), gem[0:2])
+            # 背包里面有的话直接填
+            if any(goods.get("name") == gem for goods in self.mypackage):
+                tmp = self.myreq(urls.get("insert") % (star.get("id"), str(2), can_exchange_num.get(gem).get("id")))
+                return
+            # 背包没有则兑换
+            if can_exchange_num.get(gem).get("can_exchange_num") >= 1:
+                self.myreq(urls.get("exchange2") % can_exchange_num.get(gem).get("type"))
+                self.myreq(urls.get("insert") % (star.get("id"), str(2), can_exchange_num.get(gem).get("id")))
+                return
+        upgrade_cost_detail = dict()
+        # 升级石头
+        for i in range(1, 9):
+            upgrade_info = self.myreq(urls.get("get_upgrade_info") % str(i))
+            if upgrade_info.get("result") != "0":
+                return
+            gem = upgrade_info.get("gems")[1].get("name")[2:5]
+            for j in range(1, len(upgrade_info.get("gems"))):
+                jj = upgrade_info.get("gems")[j]
+                detail = dict()
+                detail["name"] = jj.get("name")
+                detail["id"] = jj.get("id")
+                detail["upgrade_cost"] = int(jj.get("upgrade_cost"))
+                detail["upgrade_directly_cost"] = int(jj.get("upgrade_cost")) - 1
+                if j == 1:
+                    detail["upgrade_cost_base"] = int(jj.get("upgrade_cost"))
+                    detail["upgrade_directly_cost_base"] = int(jj.get("upgrade_cost")) - 1
+                    detail["base_name"] = jj.get("name")
+                    detail["had_base_number"] = int(jj.get("num"))
+                else:
+                    detail["upgrade_cost_base"] = int(jj.get("upgrade_cost")) * upgrade_cost_detail.get(
+                        upgrade_info.get("gems")[j - 1].get("name")).get("upgrade_cost_base")
+                    detail["upgrade_directly_cost_base"] = (int(jj.get("upgrade_cost")) - 1) * upgrade_cost_detail.get(
+                        upgrade_info.get("gems")[j - 1].get("name")).get("upgrade_cost_base")
+                    detail["base_name"] = upgrade_cost_detail.get(
+                        upgrade_info.get("gems")[j - 1].get("name")).get("base_name")
+                    detail["had_base_number"] = int(jj.get("num")) * detail.get("upgrade_cost_base") / detail.get(
+                        "upgrade_cost") + upgrade_cost_detail.get(upgrade_info.get("gems")[j - 1].get("name")).get(
+                        "had_base_number")
+                detail["had_num"] = int(jj.get("num"))
+                detail["upgrade_directly_still_need_base_num"] = detail.get("upgrade_directly_cost_base") - detail.get("had_base_number")
+                upgrade_cost_detail[jj.get("name")] = detail
+                if jj.get("name")[0:2] >= min_gem.get(gem):
+                    continue
+                if int(jj.get("num")) < int(jj.get("upgrade_cost")):
+                    continue
+                self.myreq(urls.get("upgrade") % jj.get("id"))
+                return
+        astrolabe_info = self.myreq(urls.get("get_astrolabe_info"))
+        if astrolabe_info.get("result") != "0":
+            return
+        sockets = list()
+        for star in astrolabe_info.get("stars"):
+            if star.get("activated") != "1":
+                continue
+            for sidx in range(0, len(star.get("sockets"))):
+                socket = star.get("sockets")[sidx]
+                if socket.get("gem") == "0":
+                    continue
+                s = dict()
+                s["star_id"] = star.get("id")
+                s["star_name"] = star.get("name")
+                s["socket_index"] = sidx
+                s["upgrade_need_name"] = [one for one in upgrade_cost_detail if upgrade_cost_detail.get(one).get("id") == socket.get("gem")][0]
+                s["upgrade_need_base_name"] = upgrade_cost_detail.get(s.get("upgrade_need_name")).get("base_name")
+                s["upgrade_need_base_num"] = upgrade_cost_detail.get(s.get("upgrade_need_name")).get("upgrade_directly_still_need_base_num")
+                s["had_num"] = upgrade_cost_detail.get(s.get("upgrade_need_name")).get("had_num")
+                s["upgrade_need_num"] = upgrade_cost_detail.get(s.get("upgrade_need_name")).get("upgrade_directly_cost")
+                if s.get("upgrade_need_name")[0:2] > min_gem.get(s.get("upgrade_need_name")[2:5]):
+                    continue
+                sockets.append(s)
+        if len(sockets) == 0:
+            return
+        sockets.sort(key=itemgetter("upgrade_need_base_num", "star_id", "socket_index"))
+        if sockets[0].get("upgrade_need_base_num") <= 0:
+            socket = sockets[0]
+            if socket.get("had_num") >= socket.get("upgrade_need_num"):
+                tmp = self.myreq(urls.get("upgrade_directly") % (socket.get("star_id"), socket.get("socket_index")))
+            return
+        for socket in sockets:
+            if not socket.get("upgrade_need_name").endswith(u"狂暴石") and not socket.get("upgrade_need_name").endswith(u"神愈石"):
+                continue
+            if can_exchange_num.get(socket.get("upgrade_need_base_name")).get("can_exchange_num") >= 1:
+                tmp = self.myreq(urls.get("exchange2") % can_exchange_num.get(socket.get("upgrade_need_base_name")).get("type"))
+            break
+        for socket in sockets:
+            if socket.get("upgrade_need_name").endswith(u"狂暴石") or socket.get("upgrade_need_name").endswith(u"神愈石"):
+                continue
+            if can_exchange_num.get(socket.get("upgrade_need_base_name")).get("can_exchange_num") >= 1:
+                tmp = self.myreq(urls.get("exchange1") % (can_exchange_num.get(socket.get("upgrade_need_base_name")).get("type"), "1"))
+            break
