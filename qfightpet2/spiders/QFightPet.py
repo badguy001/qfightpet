@@ -25,21 +25,21 @@ class Daemon(scrapy.Spider):
     cookies = dict()
 
     start_urls = list()
-    start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?cmd=index&channel=0")
+    # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?cmd=index&channel=0")
+    # start_urls.append(
+    #     "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=oblation&id=3089")  # 供奉还魂丹
+    # start_urls.append(
+    #     "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=oblation&id=3181")  # 供奉传功符
+    # start_urls.append(
+    #     "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3108")  # 使用月卡
+    # start_urls.append(
+    #     "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3112")  # 使用周卡
+    # start_urls.append(
+    #     "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=secttournament&op=getrankandrankingreward")  # 门派邀请赛领奖
+    # start_urls.append(
+    #     "https://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=newAct&op=exchange&subtype=52&type=1223&times=1")  # 登录活动兑换黄金卷轴
     start_urls.append(
-        "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=oblation&id=3089")  # 供奉还魂丹
-    start_urls.append(
-        "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=oblation&id=3181")  # 供奉传功符
-    # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&B_UID=0&sid=&channel=0&g_ut=1&cmd=misty")
-    # start_urls.append("http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=buy&id=3108&num=1&type=1")  # 购买月卡
-    start_urls.append(
-        "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3108")  # 使用月卡
-    start_urls.append(
-        "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=use&id=3112")  # 使用周卡
-    start_urls.append(
-        "http://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=secttournament&op=getrankandrankingreward")  # 门派邀请赛领奖
-    start_urls.append(
-        "https://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&sid=&channel=0&g_ut=1&cmd=newAct&op=exchange&subtype=52&type=1223&times=1")  # 登录活动兑换黄金卷轴
+        u"https://dld.qzapp.z.qq.com/qpet/cgi-bin/phonepk?zapp_uin=&B_UID=0&sid=&channel=0&g_ut=1&cmd=dreamtrip")  # 登录活动兑换黄金卷轴
 
     allowed_domains = ["dld.qzapp.z.qq.com"]
     not_allow_texts = list()
@@ -107,7 +107,7 @@ class Daemon(scrapy.Spider):
     not_allow_texts.append(u"还童")
     not_allow_texts.append(u"突飞")
     not_allow_texts.append(u"突破")
-    # not_allow_texts.append(u"研习")
+    not_allow_texts.append(u"研习")
     not_allow_texts.append(u"打造")
     not_allow_texts.append(u"记录")
     not_allow_texts.append(u"QQ")
@@ -131,6 +131,7 @@ class Daemon(scrapy.Spider):
     not_allow_texts.append(u"背包")
     not_allow_texts.append(u"进阶")
     not_allow_texts.append(u"任务派遣中心")
+    not_allow_texts.append(u"上层心法")
 
     not_allow_url_parameters = list()
     not_allow_url_parameters.append({'cmd': 'lottery'})  # 武器弹珠
@@ -157,6 +158,7 @@ class Daemon(scrapy.Spider):
     not_allow_url_parameters.append({'cmd': 'sect_task', 'subtype': '1'})  # 门派任务花斗豆刷新委托人
     not_allow_url_parameters.append({'cmd': 'secttournament', 'op': 'showinvitee'})  # 门派邀请赛，不要邀请
     not_allow_url_parameters.append({'cmd': 'secttournament', 'op': 'quitfromgroup'})  # 门派邀请赛，不要退出队伍
+    not_allow_url_parameters.append({'cmd': 'factiontrain', 'type': '1'})  # 帮修
 
     def parse(self, response):
         assert isinstance(response, scrapy.http.response.Response)
@@ -221,7 +223,7 @@ class Daemon(scrapy.Spider):
                 continue
             # 问鼎天下只攻占没人占领的
             if "tbattle" in url_parameters.get("cmd", ["none"]) and "occupy" in url_parameters.get("op", ["none"]):
-                if br_text.find(u"暂无") != -1:
+                if br_text.find(u"暂无") != -1 and br_text.find(u"240") != -1:
                     pass
                 else:
                     continue
@@ -236,9 +238,22 @@ class Daemon(scrapy.Spider):
                 elif u"刷新押镖" == text:
                     # 只能刷新一次
                     continue
-            # 历练只能打boss
-            if u"mappush" in url_parameters.get(u"cmd", ["none"]) and u"2" in url_parameters.get(u"subtype", ["none"]):
-                if br_text.find(u"无限") != -1 or br_text.find(u"0(天书)") != -1:
+            # 抢地盘
+            if "manorfight" in url_parameters.get("cmd", ["none"]) and "1" in url_parameters.get("fighttype", ["none"]):
+                if br_text.find(u"(30级)") != -1 or self.get_now_time()[7:9] >= "20":
+                    pass
+                else:
+                    continue
+            # 梦幻机票
+            if "dreamtrip" in url_parameters.get("cmd", ["none"]) and "3" in url_parameters.get("sub", ["none"]):
+                for tmp_text in response.xpath("//text()").extract():
+                    if tmp_text.find(u"未去过") != -1:
+                        url = url + "&" + urlencode({'dest': tmp_text.split(" ")[0].encode("utf-8")})
+                        break
+            if "dreamtrip" in tmp.get("cmd", ["none"]) and "3" in tmp.get("sub", ["none"]) and "dest" in tmp:
+                if text == u"去这里" and br_text.find(tmp.get("dest")[0].decode("utf-8")) != -1:
+                    pass
+                else:
                     continue
             ##########################################
             # 后面不能再过滤url
@@ -338,6 +353,14 @@ class Daemon(scrapy.Spider):
         self.formation()
         self.inscription()
         self.astrolabe()
+        self.weapon_specialize()
+        self.ancient_god()
+        self.gift()
+        self.skillEnhance()
+        self.sect_trump()
+        self.sect_art()
+        self.brofight()
+        self.factiontrain()
 
     def closed(self, reason):
         print self.stat
@@ -781,15 +804,27 @@ class Daemon(scrapy.Spider):
                 if any(y.get("id") == n.get("id") and y.get("quality") == "3" for y in tmp.get("array")):
                     n["quality"] = "3"
                     break  # 已经达到卓越了
+        for m in base_info.get("array"):
+            m["mylevel"] = int(m.get("savvy"))
+        base_info.get("array").sort(key=itemgetter("mylevel"))
         # 升级悟性
         for n in [m for m in base_info.get("array") if m.get("savvy") != "10"]:
-            while n.get("savvy") != "10" and base_info.get("wxd") > int(n.get("savvy")) / 2 + 1:
-                tmp = self.myreq(urls.get("upgrade_wuxing") % n.get("id"))
-                base_info["wxd"] = str(int(base_info.get("wxd")) - int(n.get("savvy")) / 2 + 1)  # 数量减一
-                if tmp.get("result") != "0":
-                    break
-                for x in [y for y in tmp.get("array") if y.get("id") == n.get("id")]:
-                    n["savvy"] = x.get("savvy")
+            while True:
+                if n.get("savvy") != "10" and base_info.get("wxd") > int(n.get("savvy")) / 2 + 1:
+                    tmp = self.myreq(urls.get("upgrade_wuxing") % n.get("id"))
+                    base_info["wxd"] = str(int(base_info.get("wxd")) - int(n.get("savvy")) / 2 + 1)  # 数量减一
+                    if tmp.get("result") != "0":
+                        break
+                    for x in [y for y in tmp.get("array") if y.get("id") == n.get("id")]:
+                        n["savvy"] = x.get("savvy")
+                else:
+                    tmp = self.myreq("http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&type=3013&times=1&subtype=2&op=exchange")
+                    if tmp.get("result") != "0":
+                        break
+                    if tmp.get("msg").find(u"成功") == -1:
+                        break
+                    base_info["wxd"] = str(int(base_info.get("wxd")) + 2)
+            break
         # 卓越和悟性10的可以加经验
         for n in [m for m in base_info.get("array") if
                   m.get("savvy") == "10" and m.get("quality") == "3" and int(m.get("lvl")) < 20]:
@@ -857,9 +892,22 @@ class Daemon(scrapy.Spider):
         urls = dict()
         urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=doppelganger&subtype=%s&op=2"
         urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=doppelganger&id=%s&op=7"
+        urls["get_exchange_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&subtype=18"
+        urls["exchange"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&type=%s&times=1&subtype=2"
         base_info = self.myreq(urls.get("get_base_info") % "0")
         if base_info.get("result") != "0":
             return
+        exchange_info = self.myreq(urls.get("get_exchange_info"))
+        can_exchange_num = dict()
+        for exc in exchange_info.get("items"):
+            e = dict()
+            e["name"] = exc.get("name")
+            e["type"] = exc.get("type")
+            e["id"] = exc.get("id")
+            e["can_exchange_num"] = int(
+                int(exchange_info.get("values").get(exc.get("needs_id"))) / int(exc.get("needs_num"))) * int(
+                exc.get("num"))
+            can_exchange_num[e.get("name")] = e
         for i in range(1, 4):
             tmp = self.myreq(urls.get("get_base_info") % str(i))
             if tmp.get("result") != "0":
@@ -871,19 +919,37 @@ class Daemon(scrapy.Spider):
         base_info.get("weapon").sort(key=itemgetter("need_goods_num"))
         for weapon in [w for w in base_info.get("weapon") if
                        w.get("successRate") == u"必成" and w.get("need_goods_num") <= int(
-                           base_info.get("updateGoodsHave"))]:
+                           base_info.get("updateGoodsHave")) + can_exchange_num.get(
+                           base_info.get("updateGoodsName")).get("can_exchange_num")]:
+            for i in range(0, weapon.get("need_goods_num") - int(base_info.get("updateGoodsHave"))):
+                tmp = self.myreq(
+                    urls.get("exchange") % can_exchange_num.get(base_info.get("updateGoodsName")).get("type"))
+                if tmp.get("result") != "0":
+                    return
             tmp = self.myreq(urls.get("upgrade") % weapon.get("baseId"))
-            if tmp.get("result") != "0":
-                return
+            return
 
     # 仙化技能
     def doppelganger_skill(self):
         urls = dict()
         urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=doppelganger&subtype=%s&op=3"
         urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=doppelganger&id=%s&op=8"
+        urls["get_exchange_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&subtype=18"
+        urls["exchange"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&type=%s&times=1&subtype=2"
         base_info = self.myreq(urls.get("get_base_info") % "4")
         if base_info.get("result") != "0":
             return
+        exchange_info = self.myreq(urls.get("get_exchange_info"))
+        can_exchange_num = dict()
+        for exc in exchange_info.get("items"):
+            e = dict()
+            e["name"] = exc.get("name")
+            e["type"] = exc.get("type")
+            e["id"] = exc.get("id")
+            e["can_exchange_num"] = int(
+                int(exchange_info.get("values").get(exc.get("needs_id"))) / int(exc.get("needs_num"))) * int(
+                exc.get("num"))
+            can_exchange_num[e.get("name")] = e
         for i in range(5, 7):
             tmp = self.myreq(urls.get("get_base_info") % str(i))
             if tmp.get("result") != "0":
@@ -895,7 +961,13 @@ class Daemon(scrapy.Spider):
         base_info.get("skill").sort(key=itemgetter("need_goods_num"))
         for weapon in [w for w in base_info.get("skill") if
                        w.get("successRate") == u"必成" and w.get("need_goods_num") <= int(
-                           base_info.get("updateGoodsHave"))]:
+                           base_info.get("updateGoodsHave")) + can_exchange_num.get(
+                           base_info.get("updateGoodsName")).get("can_exchange_num")]:
+            for i in range(0, weapon.get("need_goods_num") - int(base_info.get("updateGoodsHave"))):
+                tmp = self.myreq(
+                    urls.get("exchange") % can_exchange_num.get(base_info.get("updateGoodsName")).get("type"))
+                if tmp.get("result") != "0":
+                    return
             tmp = self.myreq(urls.get("upgrade") % weapon.get("baseId"))
             if tmp.get("result") != "0":
                 return
@@ -918,7 +990,7 @@ class Daemon(scrapy.Spider):
         element = self.myreq(urls.get("get_element_detail") % element_info.get("picInfo")[0].get("eId"))
         if element.get("result") != "0":
             return
-        need_radio = 850  # 成功概率至少要达到85%
+        need_radio = 900  # 成功概率至少要达到85%
         # 计算需要多少个石头才能达到规定的概率
         need_stone_num = int(math.ceil((need_radio - int(element.get("upRadio"))) / int(element.get("stoneRadio"))))
         # 当需要的石头名称
@@ -1194,6 +1266,7 @@ class Daemon(scrapy.Spider):
             urls.get("upgrade_formation") % (
                 str(attr.get("aidx")), str(upgrade_time), str(attr.get("idx")), attr.get("id")))
 
+    # 铭刻
     def inscription(self):
         urls = dict()
         urls[
@@ -1362,7 +1435,8 @@ class Daemon(scrapy.Spider):
             for idx in range(0, 2):
                 s = star.get("sockets")[idx]
                 if s.get("gem") != "0":
-                    min_gem[gems.get(s.get("gem"))[2:5]] = min(min_gem.get(gems.get(s.get("gem"))[2:5], u"8级"), gems.get(s.get("gem"))[0:2])
+                    min_gem[gems.get(s.get("gem"))[2:5]] = min(min_gem.get(gems.get(s.get("gem"))[2:5], u"8级"),
+                                                               gems.get(s.get("gem"))[0:2])
                     continue
                 # 应该填什么石头
                 if star.get("name").startswith(u"天"):
@@ -1387,7 +1461,8 @@ class Daemon(scrapy.Spider):
                     return
             s = star.get("sockets")[2]
             if s.get("gem") != "0":
-                min_gem[gems.get(s.get("gem"))[2:5]] = min(min_gem.get(gems.get(s.get("gem"))[2:5], u"8级"), gems.get(s.get("gem"))[0:2])
+                min_gem[gems.get(s.get("gem"))[2:5]] = min(min_gem.get(gems.get(s.get("gem"))[2:5], u"8级"),
+                                                           gems.get(s.get("gem"))[0:2])
                 continue
             # 应该填什么石头
             if star.get("name").startswith(u"天"):
@@ -1434,7 +1509,8 @@ class Daemon(scrapy.Spider):
                         "upgrade_cost") + upgrade_cost_detail.get(upgrade_info.get("gems")[j - 1].get("name")).get(
                         "had_base_number")
                 detail["had_num"] = int(jj.get("num"))
-                detail["upgrade_directly_still_need_base_num"] = detail.get("upgrade_directly_cost_base") - detail.get("had_base_number")
+                detail["upgrade_directly_still_need_base_num"] = detail.get("upgrade_directly_cost_base") - detail.get(
+                    "had_base_number")
                 upgrade_cost_detail[jj.get("name")] = detail
                 if jj.get("name")[0:2] >= min_gem.get(gem):
                     continue
@@ -1457,9 +1533,12 @@ class Daemon(scrapy.Spider):
                 s["star_id"] = star.get("id")
                 s["star_name"] = star.get("name")
                 s["socket_index"] = sidx
-                s["upgrade_need_name"] = [one for one in upgrade_cost_detail if upgrade_cost_detail.get(one).get("id") == socket.get("gem")][0]
+                s["upgrade_need_name"] = \
+                    [one for one in upgrade_cost_detail if upgrade_cost_detail.get(one).get("id") == socket.get("gem")][
+                        0]
                 s["upgrade_need_base_name"] = upgrade_cost_detail.get(s.get("upgrade_need_name")).get("base_name")
-                s["upgrade_need_base_num"] = upgrade_cost_detail.get(s.get("upgrade_need_name")).get("upgrade_directly_still_need_base_num")
+                s["upgrade_need_base_num"] = upgrade_cost_detail.get(s.get("upgrade_need_name")).get(
+                    "upgrade_directly_still_need_base_num")
                 s["had_num"] = upgrade_cost_detail.get(s.get("upgrade_need_name")).get("had_num")
                 s["upgrade_need_num"] = upgrade_cost_detail.get(s.get("upgrade_need_name")).get("upgrade_directly_cost")
                 if s.get("upgrade_need_name")[0:2] > min_gem.get(s.get("upgrade_need_name")[2:5]):
@@ -1474,14 +1553,595 @@ class Daemon(scrapy.Spider):
                 tmp = self.myreq(urls.get("upgrade_directly") % (socket.get("star_id"), socket.get("socket_index")))
             return
         for socket in sockets:
-            if not socket.get("upgrade_need_name").endswith(u"狂暴石") and not socket.get("upgrade_need_name").endswith(u"神愈石"):
+            if not socket.get("upgrade_need_name").endswith(u"狂暴石") and not socket.get("upgrade_need_name").endswith(
+                    u"神愈石"):
                 continue
             if can_exchange_num.get(socket.get("upgrade_need_base_name")).get("can_exchange_num") >= 1:
-                tmp = self.myreq(urls.get("exchange2") % can_exchange_num.get(socket.get("upgrade_need_base_name")).get("type"))
+                tmp = self.myreq(
+                    urls.get("exchange2") % can_exchange_num.get(socket.get("upgrade_need_base_name")).get("type"))
             break
         for socket in sockets:
             if socket.get("upgrade_need_name").endswith(u"狂暴石") or socket.get("upgrade_need_name").endswith(u"神愈石"):
                 continue
             if can_exchange_num.get(socket.get("upgrade_need_base_name")).get("can_exchange_num") >= 1:
-                tmp = self.myreq(urls.get("exchange1") % (can_exchange_num.get(socket.get("upgrade_need_base_name")).get("type"), "1"))
+                tmp = self.myreq(urls.get("exchange1") % (
+                    can_exchange_num.get(socket.get("upgrade_need_base_name")).get("type"), "1"))
             break
+
+    # 专精
+    def weapon_specialize(self):
+        urls = dict()
+        urls["get_exchange_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&subtype=8"
+        urls["exchange"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&type=%s&times=1&subtype=2"
+        urls["get_active_list"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=view&kind=5&selfuin=%s"
+        urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=weapon_specialize&type_id=%s&op=0"
+        urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=weapon_specialize&type_id=%s&op=1"
+        urls["get_storage_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=weapon_specialize&storage_id=%s&op=3"
+        urls["upgrade_storage"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=weapon_specialize&storage_id=%s&op=4"
+        exchange_info = self.myreq(urls.get("get_exchange_info"))
+        if exchange_info.get("result") != "0":
+            return
+        can_exchange_num = dict()
+        for exc in exchange_info.get("items"):
+            e = dict()
+            e["name"] = exc.get("name")
+            e["type"] = exc.get("type")
+            e["id"] = exc.get("id")
+            e["can_exchange_num"] = int(
+                int(exchange_info.get("values").get(exc.get("needs_id"))) / int(exc.get("needs_num"))) * int(
+                exc.get("num"))
+            can_exchange_num[e.get("name")] = e
+        tmp = self.myreq(urls.get("get_active_list") % self.myqq)
+        if tmp.get("result") != "0":
+            return
+        if all(u"专精" != active.get("name") for active in tmp.get("act_array")):
+            get_bless_when_fail = 2  # 不再活动时间范围内
+            return
+        else:
+            get_bless_when_fail = 6  # 四阶五星前6点，其他5点
+        base_info = list()
+        storage_info = list()
+        for type_id in range(0, 4):
+            tmp = self.myreq(urls.get("get_base_info") % str(type_id))
+            b = dict()
+            b["type_id"] = str(type_id)
+            b["bless"] = int(tmp.get("bless"))
+            b["bless_limit"] = int(tmp.get("bless_limit"))
+            b["level"] = int(tmp.get("level"))
+            b["name"] = tmp.get("name")[0:2]
+            if b.get("name") <= u"四阶" and b.get("level") <= 5:
+                b["get_bless_when_fail"] = 6
+            else:
+                b["get_bless_when_fail"] = 5
+            b["goods_have"] = int(tmp.get("update_goods_have"))
+            b["goods_name"] = tmp.get("update_goods_name")
+            b["goods_needs"] = int(tmp.get("update_goods_needs"))
+            b["still_need_goods_num"] = int(math.ceil(
+                float(b.get("bless_limit") - b.get("bless")) / float(b.get("get_bless_when_fail"))) + 1) * b.get(
+                "goods_needs") - b.get("goods_have")
+            base_info.append(b)
+            for storage in tmp.get("storages"):
+                if storage.get("active_info") != "":
+                    continue
+                tmp = self.myreq(urls.get("get_storage_info") % storage.get("storage_id"))
+                if tmp.get("result") != "0":
+                    return
+                s = dict()
+                s["storage_id"] = storage.get("storage_id")
+                s["bless_limit"] = int(tmp.get("bless_limit"))
+                s["bless"] = int(tmp.get("bless"))
+                s["goods_have"] = int(tmp.get("update_goods_have"))
+                s["goods_name"] = tmp.get("update_goods_name")
+                s["goods_needs"] = int(tmp.get("update_goods_needs"))
+                s["get_bless_when_fail"] = 4
+                s["still_need_goods_num"] = int(math.ceil(
+                    float(s.get("bless_limit") - s.get("bless")) / float(s.get("get_bless_when_fail"))) + 1) * s.get(
+                    "goods_needs") - s.get("goods_have")
+                storage_info.append(s)
+        base_info.sort(key=itemgetter("still_need_goods_num"))
+        min_one = base_info[0]
+        if min_one.get("still_need_goods_num") <= can_exchange_num.get(min_one.get("goods_name")).get(
+                "can_exchange_num") + min_one.get("goods_have"):
+            while True:
+                if min_one.get("goods_have") < min_one.get("goods_needs"):
+                    tmp = self.myreq(urls.get("exchange") % can_exchange_num.get(min_one.get("goods_name")).get("type"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goods_have"] = min_one.get("goods_have") + 1
+                else:
+                    tmp = self.myreq(urls.get("upgrade") % min_one.get("type_id"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goods_have"] = min_one.get("goods_have") - min_one.get("goods_needs")
+                    if tmp.get("msg").find(u"成功") != -1:
+                        return  # 升级成功
+        storage_info.sort(key=itemgetter("still_need_goods_num"))
+        min_one = storage_info[0]
+        if min_one.get("still_need_goods_num") <= can_exchange_num.get(min_one.get("goods_name")).get(
+                "can_exchange_num") + min_one.get("goods_have"):
+            while True:
+                if min_one.get("goods_have") < min_one.get("goods_needs"):
+                    tmp = self.myreq(urls.get("exchange") % can_exchange_num.get(min_one.get("goods_name")).get("type"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goods_have"] = min_one.get("goods_have") + 1
+                else:
+                    tmp = self.myreq(urls.get("upgrade_storage") % min_one.get("storage_id"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goods_have"] = min_one.get("goods_have") - min_one.get("goods_needs")
+                    if tmp.get("msg").find(u"成功") != -1:
+                        return  # 升级成功
+
+    # 神魔录
+    def ancient_god(self):
+        urls = dict()
+        urls["get_exchange_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&subtype=19"
+        urls["exchange"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&type=%s&times=1&subtype=2"
+        urls["get_active_list"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=view&kind=5&selfuin=%s"
+        urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=ancient_god&id=%s&op=1"
+        urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=ancient_god&id=%s&times=1&op=3"
+        exchange_info = self.myreq(urls.get("get_exchange_info"))
+        if exchange_info.get("result") != "0":
+            return
+        can_exchange_num = dict()
+        for exc in exchange_info.get("items"):
+            e = dict()
+            e["name"] = exc.get("name")
+            e["type"] = exc.get("type")
+            e["id"] = exc.get("id")
+            e["can_exchange_num"] = int(
+                int(exchange_info.get("values").get(exc.get("needs_id"))) / int(exc.get("needs_num"))) * int(
+                exc.get("num"))
+            can_exchange_num[e.get("name")] = e
+        tmp = self.myreq(urls.get("get_active_list") % self.myqq)
+        if tmp.get("result") != "0":
+            return
+        if all(u"神魔录" != active.get("name") for active in tmp.get("act_array")):
+            get_bless_when_fail = 2  # 不再活动时间范围内
+            return
+        else:
+            get_bless_when_fail = 4  # 五阶五星前4点，其他2点
+        base_info = list()
+        for i in range(1, 5):
+            tmp = self.myreq(urls.get("get_base_info") % str(i))
+            if tmp.get("result") != "0":
+                return
+            b = dict()
+            b["bless"] = int(tmp.get("bless"))
+            b["blessLimit"] = int(tmp.get("blessLimit"))
+            b["goodsConsume"] = int(tmp.get("goodsConsume"))
+            b["goodsHave"] = int(tmp.get("goodsHave"))
+            b["goodsName"] = tmp.get("goodsName")
+            b["stage"] = tmp.get("stage")
+            b["id"] = str(i)
+            if tmp.get("stage") < u"5阶5级":
+                b["bless_get_when_fail"] = 4
+            else:
+                b["bless_get_when_fail"] = 2
+            b["still_need_goods_num"] = int(int(math.ceil(
+                float(b.get("blessLimit") - b.get("bless")) / float(b.get("bless_get_when_fail")))) + 1) * b.get(
+                "goodsConsume") - b.get("goodsHave")
+            base_info.append(b)
+        base_info.sort(key=itemgetter("still_need_goods_num", "id"))
+        min_one = base_info[0]
+        while True:
+            if min_one.get("goodsHave") >= min_one.get("goodsConsume"):
+                tmp = self.myreq(urls.get("upgrade") % min_one.get("id"))
+                min_one["goodsHave"] = min_one.get("goodsHave") - min_one.get("goodsConsume")
+                if tmp.get("result") != "0":
+                    return
+                if tmp.get("msg").find(u"成功") != -1:
+                    break
+            else:
+                if can_exchange_num.get(min_one.get("goodsName")).get("can_exchange_num") >= min_one.get(
+                        "goodsConsume") - min_one.get("goodsHave"):
+                    tmp = self.myreq(urls.get("exchange") % can_exchange_num.get(min_one.get("goodsName")).get("type"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goodsHave"] = min_one.get("goodsHave") + 1
+                    can_exchange_num.get(min_one.get("goodsName"))["can_exchange_num"] = can_exchange_num.get(
+                        min_one.get("goodsName")).get("can_exchange_num") - 1
+                else:
+                    break
+
+    # 礼物
+    def gift(self):
+        urls = dict()
+        urls["send"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchangegifts&op=send&recipient=%s"
+        urls["send_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchangegifts&op=query"
+        urls["rec_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchangegifts&op=msg"
+        urls["rec"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchangegifts&op=receive&id=%s"
+        qqs = ["1417650155", "409966172", "3326703801", "1129426277"]
+        send_info = self.myreq(urls.get("send_info"))
+        if send_info.get("result") != "0":
+            return
+        for qq in qqs:
+            if self.myqq == qq:
+                continue
+            for s in send_info.get("friends_info"):
+                if s.get("can_send") == "2":
+                    continue
+                if qq != s.get("uin"):
+                    continue
+                tmp = self.myreq(urls.get("send") % qq)
+        rec_info = self.myreq(urls.get("rec_info"))
+        if rec_info.get("result") != "0":
+            return
+        already_rec = list()
+        for r in rec_info.get("notifications"):
+            if r.get("uin") in already_rec:
+                continue
+            tmp = self.myreq(urls.get("rec") % r.get("id"))
+            already_rec.append(r.get("uin"))
+
+    # 奥义
+    def skillEnhance(self):
+        urls = dict()
+        urls["get_exchange_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&subtype=17"
+        urls["exchange"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&type=%s&times=1&subtype=2"
+        urls["get_active_list"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=view&kind=5&selfuin=%s"
+        urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=skillEnhance&op=0"
+        urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=skillEnhance&op=1"
+        urls["get_storage_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=skillEnhance&storageId=%s&op=3"
+        urls["upgrade_storage"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=skillEnhance&storageId=%s&op=4"
+        exchange_info = self.myreq(urls.get("get_exchange_info"))
+        if exchange_info.get("result") != "0":
+            return
+        can_exchange_num = dict()
+        for exc in exchange_info.get("items"):
+            e = dict()
+            e["name"] = exc.get("name")
+            e["type"] = exc.get("type")
+            e["id"] = exc.get("id")
+            e["can_exchange_num"] = int(
+                int(exchange_info.get("values").get(exc.get("needs_id"))) / int(exc.get("needs_num"))) * int(
+                exc.get("num"))
+            can_exchange_num[e.get("name")] = e
+        tmp = self.myreq(urls.get("get_active_list") % self.myqq)
+        if tmp.get("result") != "0":
+            return
+        if all(u"技能奥义" != active.get("name") for active in tmp.get("act_array")):
+            get_bless_when_fail = 2  # 不再活动时间范围内
+            return
+        else:
+            get_bless_when_fail = 4  # 五阶五星前4点，其他2点
+        base_info = list()
+        storage_info = list()
+        tmp = self.myreq(urls.get("get_base_info"))
+        if tmp.get("result") != "0":
+            return
+        b = dict()
+        b["bless"] = int(tmp.get("bless"))
+        b["bless_limit"] = int(tmp.get("blessLimit"))
+        b["level"] = int(tmp.get("level"))
+        b["star"] = int(tmp.get("star"))
+        if b.get("star") <= 5 and b.get("level") % 5 - 1 <= 5:
+            b["get_bless_when_fail"] = 4
+        else:
+            b["get_bless_when_fail"] = 2
+        b["goods_have"] = int(tmp.get("updateGoodsHave"))
+        b["goods_name"] = tmp.get("updateGoodsName")
+        b["goods_needs"] = int(tmp.get("updateGoodsCosume"))
+        b["still_need_goods_num"] = int(math.ceil(
+            float(b.get("bless_limit") - b.get("bless")) / float(b.get("get_bless_when_fail"))) + 1) * b.get(
+            "goods_needs") - b.get("goods_have")
+        base_info.append(b)
+        for storage in tmp.get("storage"):
+            if storage.get("skillName") == u"未激活":
+                continue
+            tmp = self.myreq(urls.get("get_storage_info") % storage.get("storage_id"))
+            if tmp.get("result") != "0":
+                return
+            s = dict()
+            s["storage_id"] = storage.get("storage_id")
+            s["bless_limit"] = int(tmp.get("bless_limit"))
+            s["bless"] = int(tmp.get("bless"))
+            s["goods_have"] = int(tmp.get("update_goods_have"))
+            s["goods_name"] = tmp.get("update_goods_name")
+            s["goods_needs"] = int(tmp.get("update_goods_needs"))
+            s["get_bless_when_fail"] = 4
+            s["still_need_goods_num"] = int(math.ceil(
+                float(s.get("bless_limit") - s.get("bless")) / float(s.get("get_bless_when_fail"))) + 1) * s.get(
+                "goods_needs") - s.get("goods_have")
+            storage_info.append(s)
+        if len(base_info) == 0:
+            return
+        base_info.sort(key=itemgetter("still_need_goods_num"))
+        min_one = base_info[0]
+        if min_one.get("still_need_goods_num") <= can_exchange_num.get(min_one.get("goods_name")).get(
+                "can_exchange_num") + min_one.get("goods_have"):
+            while True:
+                if min_one.get("goods_have") < min_one.get("goods_needs"):
+                    tmp = self.myreq(urls.get("exchange") % can_exchange_num.get(min_one.get("goods_name")).get("type"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goods_have"] = min_one.get("goods_have") + 1
+                else:
+                    tmp = self.myreq(urls.get("upgrade"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goods_have"] = min_one.get("goods_have") - min_one.get("goods_needs")
+                    if tmp.get("msg").find(u"成功") != -1:
+                        return  # 升级成功
+        storage_info.sort(key=itemgetter("still_need_goods_num"))
+        if len(storage_info) == 0:
+            return
+        min_one = storage_info[0]
+        if min_one.get("still_need_goods_num") <= can_exchange_num.get(min_one.get("goods_name")).get(
+                "can_exchange_num") + min_one.get("goods_have"):
+            while True:
+                if min_one.get("goods_have") < min_one.get("goods_needs"):
+                    tmp = self.myreq(urls.get("exchange") % can_exchange_num.get(min_one.get("goods_name")).get("type"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goods_have"] = min_one.get("goods_have") + 1
+                else:
+                    tmp = self.myreq(urls.get("upgrade_storage") % min_one.get("storage_id"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goods_have"] = min_one.get("goods_have") - min_one.get("goods_needs")
+                    if tmp.get("msg").find(u"成功") != -1:
+                        return  # 升级成功
+
+    # 门派武器技能
+    def sect_trump(self):
+        urls = dict()
+        urls["get_exchange_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&subtype=16"
+        urls["exchange"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&type=%s&times=1&subtype=2"
+        urls["get_active_list"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=view&kind=5&selfuin=%s"
+        urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=sect_trump&subtype=0"
+        urls["get_base_detail"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=sect_trump&trump_id=%s&subtype=1"
+        urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=sect_trump&trump_id=%s&times=1&subtype=2"
+        exchange_info = self.myreq(urls.get("get_exchange_info"))
+        if exchange_info.get("result") != "0":
+            return
+        can_exchange_num = dict()
+        for exc in exchange_info.get("items"):
+            e = dict()
+            e["name"] = exc.get("name")
+            e["type"] = exc.get("type")
+            e["id"] = exc.get("id")
+            e["can_exchange_num"] = int(
+                int(exchange_info.get("values").get(exc.get("needs_id"))) / int(exc.get("needs_num"))) * int(
+                exc.get("num"))
+            can_exchange_num[e.get("name")] = e
+        tmp = self.myreq(urls.get("get_active_list") % self.myqq)
+        if tmp.get("result") != "0":
+            return
+        if all(u"门派" != active.get("name") for active in tmp.get("act_array")):
+            get_bless_when_fail = 2  # 不再活动时间范围内
+            return
+        else:
+            get_bless_when_fail = 4
+        base_info = list()
+        tmp_base_info = self.myreq(urls.get("get_base_info"))
+        if tmp_base_info.get("result") != "0":
+            return
+        for one in tmp_base_info.get("trumps"):
+            if one.get("level") == "-1":
+                continue
+            b = dict()
+            tmp = self.myreq(urls.get("get_base_detail") % one.get("id"))
+            if tmp.get("result") != "0":
+                return
+            b["bless"] = int(tmp.get("bless"))
+            b["trump_id"] = tmp.get("trump_id")
+            b["bless_limit"] = int(tmp.get("bless_limit"))
+            b["level"] = int(tmp.get("level"))
+            b["max_level"] = int(tmp.get("max_level"))
+            if b.get("level") >= b.get("max_level"):
+                continue
+            b["get_bless_when_fail"] = 4
+            b["goods_have"] = int(tmp.get("consume_desc").split("*")[1].split("/")[1])
+            b["goods_name"] = tmp.get("consume_desc").split("*")[0]
+            b["goods_needs"] = int(tmp.get("consume_desc").split("*")[1].split("/")[0])
+            b["still_need_goods_num"] = int(math.ceil(
+                float(b.get("bless_limit") - b.get("bless")) / float(b.get("get_bless_when_fail"))) + 1) * b.get(
+                "goods_needs") - b.get("goods_have")
+            base_info.append(b)
+        if len(base_info) == 0:
+            return
+        base_info.sort(key=itemgetter("still_need_goods_num"))
+        min_one = base_info[0]
+        if min_one.get("still_need_goods_num") <= can_exchange_num.get(min_one.get("goods_name")).get(
+                "can_exchange_num") + min_one.get("goods_have"):
+            while True:
+                if min_one.get("goods_have") < min_one.get("goods_needs"):
+                    tmp = self.myreq(urls.get("exchange") % can_exchange_num.get(min_one.get("goods_name")).get("type"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goods_have"] = min_one.get("goods_have") + 1
+                else:
+                    tmp = self.myreq(urls.get("upgrade") % min_one.get("trump_id"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goods_have"] = min_one.get("goods_have") - min_one.get("goods_needs")
+                    if tmp.get("msg").find(u"成功") != -1:
+                        return  # 升级成功
+
+    # 门派上层心法
+    def sect_art(self):
+        urls = dict()
+        urls["get_exchange_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&subtype=16"
+        urls["exchange"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=exchange&type=%s&times=1&subtype=2"
+        urls["get_active_list"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=view&kind=5&selfuin=%s"
+        urls["get_sect_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=sect"
+        urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=sect_art&subtype=0&sect_id=%s"
+        urls["get_base_detail"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=sect_art&subtype=1&art_id=%s"
+        urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=sect_art&times=1&subtype=2&art_id=%s"
+        exchange_info = self.myreq(urls.get("get_exchange_info"))
+        if exchange_info.get("result") != "0":
+            return
+        can_exchange_num = dict()
+        for exc in exchange_info.get("items"):
+            e = dict()
+            e["name"] = exc.get("name")
+            e["type"] = exc.get("type")
+            e["id"] = exc.get("id")
+            e["can_exchange_num"] = int(
+                int(exchange_info.get("values").get(exc.get("needs_id"))) / int(exc.get("needs_num"))) * int(
+                exc.get("num"))
+            can_exchange_num[e.get("name")] = e
+        tmp = self.myreq(urls.get("get_active_list") % self.myqq)
+        if tmp.get("result") != "0":
+            return
+        if all(u"门派" != active.get("name") for active in tmp.get("act_array")):
+            get_bless_when_fail = 2  # 不再活动时间范围内
+            return
+        else:
+            get_bless_when_fail = 1
+        sect_info = self.myreq(urls.get("get_sect_info"))
+        if sect_info.get("result") != "0":
+            return
+        base_info = list()
+        tmp_base_info = self.myreq(urls.get("get_base_info") % sect_info.get("sect"))
+        if tmp_base_info.get("result") != "0":
+            return
+        for one in tmp_base_info.get("arts"):
+            if one.get("desc").find(u"基础") != -1:
+                continue
+            b = dict()
+            tmp = self.myreq(urls.get("get_base_detail") % one.get("id"))
+            if tmp.get("result") != "0":
+                return
+            b["bless"] = int(tmp.get("exp"))
+            b["art_id"] = tmp.get("art_id")
+            b["bless_limit"] = int(tmp.get("exp_limit"))
+            b["level"] = int(tmp.get("level"))
+            b["max_level"] = int(tmp.get("max_level"))
+            if b.get("level") >= b.get("max_level"):
+                continue
+            b["get_bless_when_fail"] = 1
+            b["goods_have"] = int(tmp.get("consume_desc").split("*")[1].split("/")[1])
+            b["goods_name"] = tmp.get("consume_desc").split("*")[0]
+            b["goods_needs"] = int(tmp.get("consume_desc").split("*")[1].split("/")[0])
+            b["still_need_goods_num"] = int(math.ceil(
+                float(b.get("bless_limit") - b.get("bless")) / float(b.get("get_bless_when_fail"))) + 1) * b.get(
+                "goods_needs") - b.get("goods_have")
+            base_info.append(b)
+        if len(base_info) == 0:
+            return
+        base_info.sort(key=itemgetter("still_need_goods_num"))
+        min_one = base_info[0]
+        if min_one.get("still_need_goods_num") <= can_exchange_num.get(min_one.get("goods_name")).get(
+                "can_exchange_num") + min_one.get("goods_have"):
+            while True:
+                if min_one.get("goods_have") < min_one.get("goods_needs"):
+                    tmp = self.myreq(urls.get("exchange") % can_exchange_num.get(min_one.get("goods_name")).get("type"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goods_have"] = min_one.get("goods_have") + 1
+                else:
+                    tmp = self.myreq(urls.get("upgrade") % min_one.get("art_id"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goods_have"] = min_one.get("goods_have") - min_one.get("goods_needs")
+                    if tmp.get("msg").find(u"升级了") != -1:
+                        return  # 升级成功
+
+
+    # 兵法
+    def brofight(self):
+        urls = dict()
+        urls["get_active_list"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=view&kind=5&selfuin=%s"
+        urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=brofight&subtype=5"
+        urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=brofight&skill_base_id=%s&subtype=4"
+        tmp = self.myreq(urls.get("get_active_list") % self.myqq)
+        if tmp.get("result") != "0":
+            return
+        if all(active.get("name").find(u"兵法") == -1 for active in tmp.get("act_array")):
+            get_bless_when_fail = 2  # 不再活动时间范围内
+            return
+        else:
+            get_bless_when_fail = 1
+        base_info = list()
+        tmp_base_info = self.myreq(urls.get("get_base_info"))
+        if tmp_base_info.get("result") != "0":
+            return
+        for tmp in tmp_base_info.get("skills"):
+            b = dict()
+            b["bless"] = int(tmp.get("progress"))
+            b["base_id"] = tmp.get("base_id")
+            b["bless_limit"] = 100
+            b["level"] = int(tmp.get("level"))
+            b["get_bless_when_fail"] = 1
+            if tmp.get("base_id").startswith("25"):
+                b["goods_have"] = int(tmp_base_info.get("art_of_war_count"))
+                b["goods_name"] = u"孙子兵法"
+            else:
+                b["goods_have"] = int(tmp_base_info.get("wumu_yishu_count"))
+                b["goods_name"] = u"武穆遗书"
+            b["goods_needs"] = int(tmp.get("cost"))
+            b["still_need_goods_num"] = int(math.ceil(
+                float(b.get("bless_limit") - b.get("bless")) / float(b.get("get_bless_when_fail"))) + 1) * b.get(
+                "goods_needs") - b.get("goods_have")
+            base_info.append(b)
+        if len(base_info) == 0:
+            return
+        base_info.sort(key=itemgetter("still_need_goods_num"))
+        min_one = [b for b in base_info if b.get("base_id").startswith("25")]
+        if len(min_one) > 0:
+            min_one = min_one[0]
+            while True:
+                if min_one.get("goods_have") < min_one.get("goods_needs"):
+                    break
+                else:
+                    tmp = self.myreq(urls.get("upgrade") % min_one.get("base_id"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goods_have"] = min_one.get("goods_have") - min_one.get("goods_needs")
+                    if tmp.get("msg").find(u"升级了") != -1:
+                        break  # 升级成功
+        min_one = [b for b in base_info if not b.get("base_id").startswith("25")]
+        if len(min_one) > 0:
+            min_one = min_one[0]
+            while True:
+                if min_one.get("goods_have") < min_one.get("goods_needs"):
+                    break
+                else:
+                    tmp = self.myreq(urls.get("upgrade") % min_one.get("base_id"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goods_have"] = min_one.get("goods_have") - min_one.get("goods_needs")
+                    if tmp.get("msg").find(u"升级了") != -1:
+                        break  # 升级成功
+
+    # 帮派修炼
+    def factiontrain(self):
+        urls = dict()
+        urls["get_base_info"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=factiontrain&type=1"
+        urls["upgrade"] = "http://fight.pet.qq.com/cgi-bin/petpk?cmd=factiontrain&type=2&id=%s&times=1"
+        base_info = list()
+        tmp_base_info = self.myreq(urls.get("get_base_info"))
+        if tmp_base_info.get("result") != "0":
+            return
+        for tmp in tmp_base_info.get("array"):
+            b = dict()
+            b["bless"] = int(tmp.get("cur_lvl_exp").split("/")[0])
+            b["id"] = tmp.get("id")
+            b["bless_limit"] = int(tmp.get("cur_lvl_exp").split("/")[1])
+            b["level"] = int(tmp.get("level"))
+            b["get_bless_when_fail"] = 20
+            b["goods_have"] = int(tmp_base_info.get("new_contrib"))
+            b["goods_needs"] = int(tmp.get("sub_banggong"))
+            b["still_need_goods_num"] = int(math.ceil(
+                float(b.get("bless_limit") - b.get("bless")) / float(b.get("get_bless_when_fail"))) + 1) * b.get(
+                "goods_needs") - b.get("goods_have")
+            base_info.append(b)
+        if len(base_info) == 0:
+            return
+        base_info.sort(key=itemgetter("still_need_goods_num"))
+        min_one = base_info
+        if len(min_one) > 0:
+            min_one = min_one[0]
+            while True:
+                if min_one.get("goods_have") < min_one.get("goods_needs"):
+                    break
+                else:
+                    tmp = self.myreq(urls.get("upgrade") % min_one.get("id"))
+                    if tmp.get("result") != "0":
+                        return
+                    min_one["goods_have"] = min_one.get("goods_have") - min_one.get("goods_needs")
+                    if tmp.get("msg").find(u"升级了") != -1:
+                        break  # 升级成功
